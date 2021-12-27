@@ -4,7 +4,10 @@ import tkinter.simpledialog as tkSimpleDialog
 from functools import partial
 from tkinter import *
 import sys
-
+x1 = -1
+y1 = -1
+x2 = -1
+y2 = -1
 letterScores = [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
 letterDistribution = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1]
 letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
@@ -43,15 +46,34 @@ class Game:
             self.validWords.append(word.strip())
         self.canvas = Canvas(window, bg="#A9BCD0", width=500, height=600)
         self.canvas.grid(row=0, column=0)
-        self.frame2 = Frame(window, bg="#D8DBE2", width=500, height=600)
-        self.frame2.grid(row=0, column=1)
-        self.createBoard()
-        self.createGame()
-
-    def createGame(self):
+        self.canvas2 = Canvas(window, bg="#D8DBE2", width=500, height=600)
+        self.canvas2.grid(row=0, column=1)
         self.letters = Bag()
-        self.player = 0
-        self.mode = tkSimpleDialog.askinteger("Start the Game", "Introduce the mode: 0 - vsComputer, 1 - vs Player")
+        self.letters.createBag()
+        self.player = 1
+        self.player1hand = self.letters.assign(7)
+        self.player2hand = self.letters.assign(7)
+        self.oldWords = []
+        #self.createGame()
+        #if self.mode == 0 or self.mode == 1:
+        self.createBoard()
+        self.createFrame()
+        self.showOldWords()
+        menubar = Menu(window)
+        play = Menu(menubar, tearoff=0)
+        play.add_command(label="vsComputer")
+        play.add_command(label="vsPlayer",command=self.createGamevsPlayer)
+        play.add_command(label="Exit", command=window.destroy)
+        menubar.add_cascade(label="Play", menu=play)
+        window.config(menu=menubar)
+        self.getCoordinatesBoard()
+
+    def createGamevsPlayer(self):
+        if self.player ==1:
+            print("heyhey")
+            self.displayTiles(self.player)
+        elif self.player ==2:
+            self.displayTiles(self.player)
 
     def createBoard(self):
         for i in range(1, 16):
@@ -78,12 +100,77 @@ class Game:
         self.canvas.create_rectangle((25, 550, 50, 575), fill="#4D7298")
         self.canvas.create_text((100, 560), text="Triple Letter")
 
+    def createFrame(self):
+        self.canvas2.create_text((80, 40), text="Words used in game: ", font="Helvetica 11 ")
+        i = 0
+        for word in self.oldWords:
+            nr = tk.Label(self.canvas2, text=word, font="Helvetica 9", background="#D8DBE2")
+            nr.place()
+        self.canvas2.create_text((345, 150), text="Score player 1: ", font="Helvetica 12 bold")
+        self.canvas2.create_text((345, 175), text="Score player 2 : ", font="Helvetica 12 bold")
+        self.canvas2.create_text((345, 215), text="Tiles left : ", font="Helvetica 12 bold")
+        nr = Label(self.canvas2, text=len(self.letters.bag), font="Helvetica 15 bold", background="#D8DBE2")
+        nr.place(x=400, y=200)
+        self.canvas2.create_text((265, 300), text="Player's    turn", font="Helvetica 15 bold")
+        nr = Label(self.canvas2, text=self.player, font="Helvetica 15 bold", background="#D8DBE2")
+        nr.place(x=275, y=285)
+        for i in range(1, 8):
+            self.canvas2.create_rectangle((80 + i * 40, 350, 120 + i * 40, 400), fill="white",
+                                          outline="black")
+        btn = tk.Button(self.canvas2, text="Play", bd='3', bg="#548C2F", width=10)
+        btn.place(x=105, y=450)
+        btn = tk.Button(self.canvas2, text="Pass", bd='3', bg="#F9A620", width=10)
+        btn.place(x=185, y=450)
+        btn = tk.Button(self.canvas2, text="Undo", bd='3', bg="#F9A620", width=10)
+        btn.place(x=265, y=450)
+        btn = tk.Button(self.canvas2, text="Exchange", bd='3', bg="#F9A620", width=10)
+        btn.place(x=345, y=450)
+
+    def showOldWords(self):
+        self.canvas2.create_text((80, 40), text="Words used in game: ", font="Helvetica 11 ")
+        i = 0
+        j = 0
+        for word in self.oldWords:
+            nr = tk.Label(self.canvas2, text=word, font="Helvetica 8", background="#D8DBE2")
+            if i <= 15:
+                nr.place(x=5, y=50 + i * 15)
+                i += 1
+            else:
+                nr.place(x=45, y=50 + j * 15)
+                j += 1
+
+    def displayTiles(self, player):
+        if player == 1:
+            i = 0
+            for letter in self.player1hand:
+                self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+                i += 1
+        if player == 2:
+            i = 0
+            for letter in self.player2hand:
+                self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+                i += 1
+
+    def display(self, eventorigin):
+        global x1,y1
+        x1 = eventorigin.x
+        y1 = eventorigin.y
+        #print(x, y)
+
+    def displayBoard(self, eventorigin):
+        global x2,y2
+        x2 = eventorigin.x
+        y2 = eventorigin.y
+
+    def getCoordinatesHand(self):
+        self.canvas2.bind('<Button-1>', self.display)
+    def getCoordinatesBoard(self):
+        self.canvas.bind('<Button-1>', self.displayBoard)
+    #def getLetter(self):
+
+
 
 window = Tk()
 window.title("Scrabble Game")
 cri = Game(window)
-
-# doubleLetter = ((0, 3), (0,11), (2,6), (2,8), (3,0), (3,7), (3,14), (6,2), (6,6), (6,8), (6,12), (7,3), (7,11), (8,2), (8,6), (8,8), (8, 12), (11,0), (11,7), (11,14), (12,6), (12,8), (14, 3), (14, 11))
-# tripleWord = ((0,0), (7, 0), (14,0), (0, 7), (14, 7), (0, 14), (7, 14), (14,14))
-# doubleWord = ((1,1), (2,2), (3,3), (4,4), (1, 13), (2, 12), (3, 11), (4, 10), (13, 1), (12, 2), (11, 3), (10, 4), (13,13), (12, 12), (11,11), (10,10))
-# tripleLetter = ((1,5), (1, 9), (5,1), (5,5), (5,9), (5,13), (9,1), (9,5), (9,9), (9,13), (13, 5), (13,9))
+window.mainloop()
