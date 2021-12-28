@@ -8,6 +8,8 @@ y1 = -1
 x2 = -1
 y2 = -1
 e = 0
+play = True
+endTurn = False
 letterScores = [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
 letterDistribution = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 6, 4, 2, 2, 1, 2, 1]
 letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
@@ -39,6 +41,7 @@ class Bag(object):
 
 class Game:
     def __init__(self, window):
+
         self.scores = letterScores
         Dict = open("dictionary.txt")
         self.validWords = []
@@ -60,6 +63,10 @@ class Game:
         self.createFrame()
         self.showOldWords()
         self.firstTurn = 1
+        self.letterToPlace = ''
+        self.getCoordinatesHand()
+        self.getCoordinatesBoard()
+        self.started = 0
         menubar = Menu(window)
         play = Menu(menubar, tearoff=0)
         play.add_command(label="vsComputer")
@@ -74,34 +81,12 @@ class Game:
         window.destroy()
 
     def startGame(self):
-        self.getCoordinatesHand()
-        self.getCoordinatesBoard()
+        self.started = 1
         self.player1hand = self.letters.assign(7)
         self.player2hand = self.letters.assign(7)
         self.gamevsPlayer()
 
-    def gamevsPlayer(self):
-        self.lettersPlaced = []
-        self.playOrder()
-        # self.player == 2
-        # while e != 1:
-        # print("not here")
-        if self.player == 1:
-            self.displayTiles()
-            self.displayTilesLeft()
-            if x1 != -1 and y1 != -1:
-                # print("get letter")
-                letterToPlace = self.getLetter()
-            if x2 != -1 and y2 != -1:
-                tileX, tileY = self.getTile()
-                self.tilesOccupied.append(tileX)
-                self.tilesOccupied.append(tileY)
-                self.placeLetter(tileX, tileY, letterToPlace, self.player)
-            # self.player = 2
-        elif self.player == 2:
-            self.displayTiles(self.player)
-            self.displayTilesLeft()
-            # self.player = 1
+
 
     def createBoard(self):
         for i in range(1, 16):
@@ -140,7 +125,7 @@ class Game:
         for i in range(1, 8):
             self.canvas2.create_rectangle((80 + i * 40, 350, 120 + i * 40, 400), fill="white",
                                           outline="black")
-        btn = tk.Button(self.canvas2, text="Play", bd='3', bg="#548C2F", width=10)
+        btn = tk.Button(self.canvas2, text="Play", bd='3', bg="#548C2F", width=10, command=self.playTurn)
         btn.place(x=105, y=450)
         btn = tk.Button(self.canvas2, text="Pass", bd='3', bg="#F9A620", width=10, command=self.passTurn)
         btn.place(x=185, y=450)
@@ -148,6 +133,46 @@ class Game:
         btn.place(x=265, y=450)
         btn = tk.Button(self.canvas2, text="Exchange", bd='3', bg="#F9A620", width=10, command=self.exchangeTiles)
         btn.place(x=345, y=450)
+
+    def gamevsPlayer(self):
+        self.playOrder()
+        if self.player == 1:
+            endTurn = False
+            self.displayTiles()
+            self.displayTilesLeft()
+            if x1 != -1 and y1 != -1 and self.started == 1:
+                self.letterToPlace = self.getLetter()
+                print(self.letterToPlace)
+            if x2 != -1 and y2 != -1 and self.started == 1:
+                tileX, tileY = self.getTile()
+                print(tileX,tileY)
+                thisTuple = (tileX,tileY)
+                self.tilesOccupied.append(thisTuple)
+                #print("here is length")
+                #print(self.lettersPlaced)
+                if e == 0:
+                    self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
+                elif e > 0 and self.getLetterFromBoard() == True:
+                    self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
+            if endTurn == True:
+                print("Endturn")
+                self.changePlayer()
+        elif self.player == 2:
+            endTurn = False
+            self.displayTiles()
+            self.displayTilesLeft()
+            if x1 != -1 and y1 != -1 and self.started == 1:
+                print("here")
+                self.letterToPlace = self.getLetter()
+                print(self.letterToPlace)
+            if x2 != -1 and y2 != -1 and self.started == 1:
+                tileX, tileY = self.getTile()
+                self.tilesOccupied.append(tileX)
+                self.tilesOccupied.append(tileY)
+                self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
+            if endTurn == True:
+                self.changePlayer()
+        window.after(10,self.gamevsPlayer)
 
     def playOrder(self):
         nr = Label(self.canvas2, text=self.player, font="Helvetica 15 bold", background="#D8DBE2")
@@ -195,8 +220,10 @@ class Game:
                 self.canvas2.delete(self.texts2Id[index])
 
     def placeLetter(self, x, y, letter, player):
+        global e
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
+        e += 1
         print(self.lettersPlaced)
         if player == 1:
             index = self.player1hand.index(letter)
@@ -213,9 +240,25 @@ class Game:
         self.canvas.delete(letterToUndo)
         self.displayTiles()
 
-    def getLetterFromBoard(self, x, y):
-        overlap = self.canvas.find_overlapping(10 + x * 28, 10 + y * 28, 38 + x * 28, 38 + y * 28)
-        letter = self.canvas.itemcget(overlap[1], "text")
+    def getLetterFromBoard(self):
+        print("Hwr")
+        print(self.lettersPlaced)
+        letter = self.lettersPlaced[-1]
+        coordinates = self.canvas.coords(letter)
+        if coordinates[0]>0 and coordinates[1]>0:
+            print("ajungi aici")
+            return False
+        return True
+
+
+    def playTurn(self):
+        global endTurn
+        self.validatePlay()
+        endTurn = True
+        self.changePlayer()
+        self.displayTiles()
+        self.playOrder()
+        self.displayTilesLeft()
 
     def changePlayer(self):
         if self.player == 1:
@@ -224,17 +267,21 @@ class Game:
             self.player = 1
 
     def passTurn(self):
+        global endTurn
         self.hideTiles()
         self.reload()
+        endTurn = True
         self.changePlayer()
         self.displayTiles()
         self.playOrder()
         self.displayTilesLeft()
 
     def exchangeTiles(self):
+        global endTurn
         if self.player == 1:
             self.hideTiles()
             self.player1hand = self.letters.assign(7)
+            endTurn = True
             self.changePlayer()
             self.displayTiles()
             self.playOrder()
@@ -242,6 +289,7 @@ class Game:
         elif self.player == 2:
             self.hideTiles()
             self.player2hand = self.letters.assign(7)
+            endTurn = True
             self.changePlayer()
             self.displayTiles()
             self.playOrder()
@@ -279,14 +327,13 @@ class Game:
                 words.pop(word)
         for word in words:
             for x_y in words[word]:
-                if x_y == (7,7):
+                if x_y == (7, 7):
                     return True
                 for oldWord in self.oldWords:
                     for x_y2 in self.oldWords[oldWord]:
                         if x_y == x_y2:
                             return True
         return False
-
 
     def getWordsBoard(self):
         words = []
@@ -311,14 +358,14 @@ class Game:
                         words[word] = x_y
                     if dir == 3:
                         word = self.getLetterFromBoard(i, j).strip()
-                        x_y = (i,j)
+                        x_y = (i, j)
                         i2 = i
                         while found == False:
                             if self.containsLetter(i2 + 1, j):
-                                word += self.getLetterFromBoard(i2+1, j).strip()
+                                word += self.getLetterFromBoard(i2 + 1, j).strip()
                             else:
                                 found = True
-                            i2+=1
+                            i2 += 1
                         words[word] = x_y
         return words
 
