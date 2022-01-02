@@ -57,6 +57,7 @@ class Game:
         self.oldWords = {}
         self.textsId = []
         self.texts2Id = []
+        self.board = [[None for x in range(15)] for y in range(15)]
         self.tilesOccupied = []
         self.lettersPlaced = []
         self.createBoard()
@@ -84,6 +85,7 @@ class Game:
         self.started = 1
         self.player1hand = self.letters.assign(7)
         self.player2hand = self.letters.assign(7)
+        self.displayTiles()
         self.gamevsPlayer()
 
 
@@ -137,22 +139,18 @@ class Game:
     def gamevsPlayer(self):
         self.playOrder()
         if self.player == 1:
+
             endTurn = False
-            self.displayTiles()
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
                 self.letterToPlace = self.getLetter()
-                print(self.letterToPlace)
+                #print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
-                print(tileX,tileY)
+                #print(tileX,tileY)
                 thisTuple = (tileX,tileY)
-                self.tilesOccupied.append(thisTuple)
-                #print("here is length")
-                #print(self.lettersPlaced)
-                if e == 0:
-                    self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
-                elif e > 0 and self.getLetterFromBoard() == True:
+                if thisTuple not in self.tilesOccupied:
+                    self.tilesOccupied.append(thisTuple)
                     self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
             if endTurn == True:
                 print("Endturn")
@@ -162,9 +160,9 @@ class Game:
             self.displayTiles()
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
-                print("here")
+                #print("here")
                 self.letterToPlace = self.getLetter()
-                print(self.letterToPlace)
+                #print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
                 self.tilesOccupied.append(tileX)
@@ -199,9 +197,10 @@ class Game:
         if self.player == 1:
             i = 0
             for letter in self.player1hand:
-                self.textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+                textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
                 i += 1
-                self.textsId.append(self.textId)
+                self.textsId.append(textId)
+                print(self.textsId)
         if self.player == 2:
             i = 0
             for letter in self.player2hand:
@@ -220,36 +219,26 @@ class Game:
                 self.canvas2.delete(self.texts2Id[index])
 
     def placeLetter(self, x, y, letter, player):
-        global e
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
-        e += 1
-        print(self.lettersPlaced)
+        self.board[x-1][y-1] = letter
+        #print(self.lettersPlaced)
         if player == 1:
             index = self.player1hand.index(letter)
             self.canvas2.delete(self.textsId[index])
         if player == 2:
             index = self.player2hand.index(letter)
             self.canvas2.delete(self.textsId[index])
+        print(self.board)
 
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
         coordinates = self.canvas.coords(letterToUndo)
+        print(letterToUndo)
         x = round(coordinates[0])
         y = round(coordinates[1])
         self.canvas.delete(letterToUndo)
         self.displayTiles()
-
-    def getLetterFromBoard(self):
-        print("Hwr")
-        print(self.lettersPlaced)
-        letter = self.lettersPlaced[-1]
-        coordinates = self.canvas.coords(letter)
-        if coordinates[0]>0 and coordinates[1]>0:
-            print("ajungi aici")
-            return False
-        return True
-
 
     def playTurn(self):
         global endTurn
@@ -399,15 +388,15 @@ class Game:
         else:
             return 0
 
-    def containsLetter(self, x, y):
-        overlap = self.canvas.find_overlapping(10 + x * 28, 10 + y * 28, 38 + x * 28, 38 + y * 28)
-        if len(overlap) > 1:
-            letter = self.canvas.itemcget(overlap[1], "text")
-            if letter == "Start":
-                return False
-            else:
-                return True
-        return False
+    # def containsLetter(self, x, y):
+    #     overlap = self.canvas.find_overlapping(10 + x * 28, 10 + y * 28, 38 + x * 28, 38 + y * 28)
+    #     if len(overlap) > 1:
+    #         letter = self.canvas.itemcget(overlap[1], "text")
+    #         if letter == "Start":
+    #             return False
+    #         else:
+    #             return True
+    #     return False
 
     def display(self, eventorigin):
         global x1, y1
