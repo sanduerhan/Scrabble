@@ -8,6 +8,36 @@ y1 = -1
 x2 = -1
 y2 = -1
 e = 0
+LETTER_VALUES = {"A": 1,
+                 "B": 3,
+                 "C": 3,
+                 "D": 2,
+                 "E": 1,
+                 "F": 4,
+                 "G": 2,
+                 "H": 4,
+                 "I": 1,
+                 "J": 1,
+                 "K": 5,
+                 "L": 1,
+                 "M": 3,
+                 "N": 1,
+                 "O": 1,
+                 "P": 3,
+                 "Q": 10,
+                 "R": 1,
+                 "S": 1,
+                 "T": 1,
+                 "U": 1,
+                 "V": 4,
+                 "W": 4,
+                 "X": 8,
+                 "Y": 4,
+                 "Z": 10}
+TRIPLE_WORD_SCORE = ((1,1), (8, 1), (15,1), (1, 8), (15, 8), (1, 15), (8, 15), (15,15))
+DOUBLE_WORD_SCORE = ((2,2), (3,3), (4,4), (5,5), (2, 14), (3, 13), (4, 12), (5, 11), (14, 2), (13, 3), (12, 4), (11, 5), (14,14), (13, 13), (12,12), (11,11))
+TRIPLE_LETTER_SCORE = ((2,6), (2, 10), (6,2), (6,6), (6,10), (6,14), (10,2), (10,6), (10,10), (10,14), (14, 6), (14,10))
+DOUBLE_LETTER_SCORE = ((1, 4), (1,12), (3,7), (3,9), (4,1), (4,8), (4,15), (7,3), (7,7), (7,9), (7,13), (8,4), (8,12), (9,3), (9,7), (9,9), (9, 13), (12,1), (12,8), (12,15), (13,7), (13,9), (15, 4), (15, 12))
 play = True
 endTurn = False
 letterScores = [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
@@ -57,6 +87,7 @@ class Game:
         self.oldWords = {}
         self.textsId = []
         self.texts2Id = []
+        self.words = {}
         self.board = [[None for x in range(15)] for y in range(15)]
         self.tilesOccupied = []
         self.lettersPlaced = []
@@ -68,6 +99,7 @@ class Game:
         self.getCoordinatesHand()
         self.getCoordinatesBoard()
         self.started = 0
+        self.word = ''
         menubar = Menu(window)
         play = Menu(menubar, tearoff=0)
         play.add_command(label="vsComputer")
@@ -200,7 +232,7 @@ class Game:
                 textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
                 i += 1
                 self.textsId.append(textId)
-                print(self.textsId)
+                #print(self.textsId)
         if self.player == 2:
             i = 0
             for letter in self.player2hand:
@@ -229,12 +261,12 @@ class Game:
         if player == 2:
             index = self.player2hand.index(letter)
             self.canvas2.delete(self.textsId[index])
-        print(self.board)
+        #print(self.board)
 
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
         coordinates = self.canvas.coords(letterToUndo)
-        print(letterToUndo)
+        #print(letterToUndo)
         x = round(coordinates[0])
         y = round(coordinates[1])
         self.canvas.delete(letterToUndo)
@@ -243,6 +275,7 @@ class Game:
     def playTurn(self):
         global endTurn
         self.validatePlay()
+        print(self.calculateWordScore())
         endTurn = True
         self.changePlayer()
         self.displayTiles()
@@ -301,21 +334,22 @@ class Game:
                 self.player2hand.append(letter)
 
     def validatePlay(self):
-        words = self.getWordsBoard()
-        for word in words:
+        self.words = self.getWordsBoard()
+        print(self.words)
+        for word in self.words:
             if word not in self.validWords:
                 messagebox.showerror("Error", word + "not in dictionary")
                 return False
         lastRound = {}
         for word in self.oldWords.keys():
-            if word in words.keys():
-                if self.oldWords[word] == words[word]:
-                    lastRound[word] = words[word]
+            if word in self.words.keys():
+                if self.oldWords[word] == self.words[word]:
+                    lastRound[word] = self.words[word]
         for word in lastRound:
-            if lastRound[word] == words[word]:
-                words.pop(word)
-        for word in words:
-            for x_y in words[word]:
+            if lastRound[word] == self.words[word]:
+                self.words.pop(word)
+        for word in self.words:
+            for x_y in self.words[word]:
                 if x_y == (7, 7):
                     return True
                 for oldWord in self.oldWords:
@@ -325,38 +359,43 @@ class Game:
         return False
 
     def getWordsBoard(self):
-        words = []
         found = False
         for i in range(15):
             for j in range(15):
-                if self.containsLetter(i, j):
+                if self.board[i][j] != None:
                     dir = self.direction(i, j)
                     if dir == 2:
-                        word = self.getLetterFromBoard(i, j).strip()
-                        x_y = (i, j)
+                        self.word = self.board[i][j].strip()
+                        x_y = [dir,i+1, j+1]
                         j2 = j
                         while found == False:
                             if j2 < 15:
-                                if self.containsLetter(i, j2 + 1):
-                                    word += self.getLetterFromBoard(i, j2 + 1).strip()
+                                if self.board[i][j2+i] != None:
+                                    self.word += self.board[i][j2+1].strip()
                                 else:
                                     found = True
                                 j2 += 1
                             elif j2 >= 15:
                                 found = True
-                        words[word] = x_y
+                        self.words[self.word] = x_y
                     if dir == 3:
-                        word = self.getLetterFromBoard(i, j).strip()
-                        x_y = (i, j)
+                        self.word = self.board[i][j].strip()
+                        #print("Aici ai venit?")
+                        x_y = [dir,i+1, j+1]
                         i2 = i
                         while found == False:
-                            if self.containsLetter(i2 + 1, j):
-                                word += self.getLetterFromBoard(i2 + 1, j).strip()
+                            if self.board[i2+1][j]!= None:
+                                self.word += self.board[i2+1][j].strip()
                             else:
                                 found = True
+                                x_y.append(i2)
+                                x_y.append(j)
                             i2 += 1
-                        words[word] = x_y
-        return words
+                        self.words[self.word] = x_y
+        #print(self.words)
+        return self.words
+
+
 
     def direction(self, i, j):
         down = 0
@@ -364,21 +403,25 @@ class Game:
         left = 0
         up = 0
         if i == 1 and j == 1:
-            if self.containsLetter(i, j + 1):
+            if self.board[i][j+1] != None:
                 down = 1
-            if self.containsLetter(i + 1, j):
+            if self.board[i + 1][j] != None:
                 right = 1
-        if self.containsLetter(i - 1, j):
+        if self.board[i-1][j] != None:
             left = 1
-        if self.containsLetter(i, j - 1):
+        if self.board[i][j-1] != None:
             up = 1
         if left == 0 and up == 0:
-            right = self.containsLetter(i + 1, j)
-            down = self.containsLetter(i, j + 1)
+            if self.board[i+1][j] != None:
+                right = 1
+            if self.board[i][j+1] != None:
+                down = 1
         elif left == 0:
-            right = self.containsLetter(i + 1, j)
+            if self.board[i+1][j] != None:
+                right = 1
         elif up == 0:
-            down = self.containsLetter(i, j + 1)
+            if self.board[i][j + 1] != None:
+                down = 1
         # if down == 1 and right == 1:
         # return 1
         if down == 1:
@@ -388,15 +431,53 @@ class Game:
         else:
             return 0
 
-    # def containsLetter(self, x, y):
-    #     overlap = self.canvas.find_overlapping(10 + x * 28, 10 + y * 28, 38 + x * 28, 38 + y * 28)
-    #     if len(overlap) > 1:
-    #         letter = self.canvas.itemcget(overlap[1], "text")
-    #         if letter == "Start":
-    #             return False
-    #         else:
-    #             return True
-    #     return False
+
+    def calculateWordScore(self):
+        if self.word not in self.oldWords:
+            wordScore = 0
+            beginning = []
+            end = []
+            double,triple = 0,0
+            print("Inside calculate")
+            print(self.words)
+            print(self.word)
+            beginning.append(self.words[self.word][1])
+            beginning.append(self.words[self.word][2])
+            end.append(self.words[self.word][3])
+            end.append(self.words[self.word][4])
+            direction = self.words[self.word][0]
+            for letter in self.word:
+                if direction == 2:
+                    if tuple(beginning) in DOUBLE_LETTER_SCORE:
+
+                        wordScore += LETTER_VALUES[letter]*2
+                    elif tuple(beginning) in TRIPLE_LETTER_SCORE:
+                        wordScore += LETTER_VALUES[letter]*3
+                    elif tuple(beginning) in DOUBLE_WORD_SCORE:
+                        double = 1
+                    elif tuple(beginning) in TRIPLE_WORD_SCORE:
+                        triple = 1
+                    else:
+                        wordScore+= LETTER_VALUES[letter]
+                    beginning[0] = beginning[0]+1
+                elif direction == 3:
+                    if tuple(beginning) in DOUBLE_LETTER_SCORE:
+                        print("You enter here?")
+                        wordScore += LETTER_VALUES[letter]*2
+                    elif tuple(beginning) in TRIPLE_LETTER_SCORE:
+                        wordScore += LETTER_VALUES[letter]*3
+                    elif tuple(beginning) in DOUBLE_WORD_SCORE:
+                        double = 1
+                    elif tuple(beginning) in TRIPLE_WORD_SCORE:
+                        triple = 1
+                    else:
+                        wordScore += LETTER_VALUES[letter]
+                    beginning[1] = beginning[1]+1
+            if double == 1:
+                wordScore *= 2
+            elif triple == 1:
+                wordScore *= 3
+        return wordScore
 
     def display(self, eventorigin):
         global x1, y1
