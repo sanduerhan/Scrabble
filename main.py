@@ -2,6 +2,7 @@ import random
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import *
+import sys
 
 x1 = -1
 y1 = -1
@@ -50,6 +51,8 @@ letterDistribution = [9, 2, 2, 4, 12, 2, 3, 2, 9, 1, 1, 4, 2, 6, 8, 2, 1, 6, 4, 
 letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V",
            "W", "X", "Y", "Z"]
 
+my_file = open(sys.argv[1], 'r')
+
 
 class Bag(object):
     def __init__(self):
@@ -78,7 +81,7 @@ class Game:
     def __init__(self, window):
 
         self.scores = letterScores
-        Dict = open("dictionary.txt")
+        Dict = my_file
         self.validWords = []
         for word in Dict:
             self.validWords.append(word.strip())
@@ -258,13 +261,14 @@ class Game:
 
     def hideTiles(self):
         if self.player == 1:
-            for letter in self.player1hand:
-                index = self.player1hand.index(letter)
-                self.canvas2.delete(self.textsId[index])
+            for item in self.textsId:
+                self.canvas2.delete(item)
+            # for letter in self.player1hand:
+            #     index = self.player1hand.index(letter)
+            #     self.canvas2.delete(self.textsId[index])
         elif self.player == 2:
-            for letter in self.player2hand:
-                index = self.player2hand.index(letter)
-                self.canvas2.delete(self.texts2Id[index])
+            for item in self.texts2Id:
+                self.canvas2.delete(item)
 
     def placeLetter(self, x, y, letter, player):
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
@@ -282,9 +286,6 @@ class Game:
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
         coordinates = self.canvas.coords(letterToUndo)
-        # print(letterToUndo)
-        x = round(coordinates[0])
-        y = round(coordinates[1])
         self.canvas.delete(letterToUndo)
         self.displayTiles()
 
@@ -404,12 +405,12 @@ class Game:
                     print(dir)
                     if dir == 2 or dir == 5:
                         print("Is it down?")
-                        print(self.board)
+                        #print(self.board)
                         self.word = self.board[i][j]
                         x_y = [dir, j + 1, i + 1]
                         j2 = j
                         while not found:
-                            print(self.board[i][j2+1])
+                            #print(self.board[i][j2+1])
                             if self.board[i][j2 + 1] is not None:
                                 self.word += self.board[i][j2 + 1]
                             else:
@@ -420,7 +421,7 @@ class Game:
                         self.words[self.word] = x_y
                     elif dir == 3 or dir == 8:
                         self.word = self.board[i][j]
-                        print("Aici ai venit?")
+                        print("Is it right?")
                         x_y = [dir, j + 1, i + 1]
                         i2 = i
                         while not found:
@@ -433,6 +434,23 @@ class Game:
                             i2 += 1
                         self.words[self.word] = x_y
                         dir -= 3
+                        if dir == 5:
+                            found = False
+                            print("Is it down?")
+                            # print(self.board)
+                            self.word = self.board[i][j]
+                            x_y = [dir, j + 1, i + 1]
+                            j2 = j
+                            while not found:
+                                # print(self.board[i][j2+1])
+                                if self.board[i][j2 + 1] is not None:
+                                    self.word += self.board[i][j2 + 1]
+                                else:
+                                    found = True
+                                    x_y.append(j2 + 1)
+                                    x_y.append(i + 1)
+                                j2 += 1
+                            self.words[self.word] = x_y
 
         print(self.words)
         return self.words
@@ -473,7 +491,9 @@ class Game:
 
     def calculateWordScore(self):
         print("this is the word" + self.word)
+        print(self.oldWords)
         if self.word not in self.oldWords:
+            print("this is self word " + self.word)
             wordScore = 0
             beginning = []
             end = []
@@ -486,7 +506,6 @@ class Game:
             for letter in self.word:
                 if direction == 2 or direction == 8:
                     if tuple(beginning) in DOUBLE_LETTER_SCORE:
-
                         wordScore += LETTER_VALUES[letter] * 2
                     elif tuple(beginning) in TRIPLE_LETTER_SCORE:
                         wordScore += LETTER_VALUES[letter] * 3
