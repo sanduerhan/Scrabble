@@ -7,7 +7,7 @@ x1 = -1
 y1 = -1
 x2 = -1
 y2 = -1
-e = 0
+start = 0
 LETTER_VALUES = {"A": 1,
                  "B": 3,
                  "C": 3,
@@ -97,6 +97,7 @@ class Game:
         self.createFrame()
         self.showOldWords()
         self.firstTurn = 1
+        self.letterThisTurn = []
         self.letterToPlace = ''
         self.getCoordinatesHand()
         self.getCoordinatesBoard()
@@ -125,11 +126,12 @@ class Game:
 
 
     def createBoard(self):
+        global start
         for i in range(1, 16):
             for j in range(1, 16):
                 if i == 8 and j == 8:
                     self.canvas.create_rectangle((10 + i * 28, 10 + j * 28, 38 + i * 28, 38 + j * 28), fill="#E4DFDA")
-                    self.canvas.create_text((248, 250), text="Start")
+                    start = self.canvas.create_text((248, 250), text="Start")
                 elif i == 1 and j == 1 or i == 8 and j == 1 or i == 15 and j == 1 or i == 1 and j == 8 or i == 15 and j == 8 or i == 1 and j == 15 or i == 8 and j == 15 or i == 15 and j == 15:
                     self.canvas.create_rectangle((10 + i * 28, 10 + j * 28, 38 + i * 28, 38 + j * 28), fill="#C75146")
                 elif i == 2 and j == 2 or i == 3 and j == 3 or i == 4 and j == 4 or i == 5 and j == 5 or i == 2 and j == 14 or i == 3 and j == 13 or i == 4 and j == 12 or i == 5 and j == 11 or i == 14 and j == 2 or i == 13 and j == 3 or i == 12 and j == 4 or i == 11 and j == 5 or i == 14 and j == 14 or i == 13 and j == 13 or i == 12 and j == 12 or i == 11 and j == 11:
@@ -178,6 +180,7 @@ class Game:
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
                 self.letterToPlace = self.getLetter()
+                self.letterThisTurn.append(self.letterToPlace)
                 #print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
@@ -187,21 +190,22 @@ class Game:
                     self.tilesOccupied.append(thisTuple)
                     self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
             if endTurn == True:
-                print("Endturn")
+                #print("Endturn")
                 self.changePlayer()
         elif self.player == 2:
             endTurn = False
-            self.displayTiles()
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
                 #print("here")
                 self.letterToPlace = self.getLetter()
+                self.letterThisTurn.append(self.letterToPlace)
                 #print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
-                self.tilesOccupied.append(tileX)
-                self.tilesOccupied.append(tileY)
-                self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
+                thisTuple = (tileX, tileY)
+                if thisTuple not in self.tilesOccupied:
+                    self.tilesOccupied.append(thisTuple)
+                    self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
             if endTurn == True:
                 self.changePlayer()
         window.after(10,self.gamevsPlayer)
@@ -235,19 +239,20 @@ class Game:
                 j += 1
 
     def displayTiles(self):
+        self.textsId.clear()
+        self.texts2Id.clear()
         if self.player == 1:
             i = 0
             for letter in self.player1hand:
                 textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
                 i += 1
                 self.textsId.append(textId)
-                #print(self.textsId)
         if self.player == 2:
             i = 0
             for letter in self.player2hand:
-                self.text2Id = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+                text2Id = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
                 i += 1
-                self.texts2Id.append(self.text2Id)
+                self.texts2Id.append(text2Id)
 
     def hideTiles(self):
         if self.player == 1:
@@ -263,14 +268,14 @@ class Game:
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
         self.board[x-1][y-1] = letter
-        #print(self.lettersPlaced)
+        if x == 8 and y == 8:
+            self.canvas.delete(start)
         if player == 1:
             index = self.player1hand.index(letter)
             self.canvas2.delete(self.textsId[index])
-        if player == 2:
+        elif player == 2:
             index = self.player2hand.index(letter)
-            self.canvas2.delete(self.textsId[index])
-        #print(self.board)
+            self.canvas2.delete(self.texts2Id[index])
 
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
@@ -284,8 +289,11 @@ class Game:
     def playTurn(self):
         global endTurn
         self.validatePlay()
-        print(self.calculateWordScore())
+        self.calculateWordScore()
         endTurn = True
+        self.reload()
+        print(self.player1hand)
+        self.hideTiles()
         self.changePlayer()
         self.displayTiles()
         self.playOrder()
@@ -327,24 +335,27 @@ class Game:
             self.displayTilesLeft()
 
     def reload(self):
+
         if self.player == 1:
+            self.player1hand = [e for e in self.player1hand if e not in self.letterThisTurn]
             if 7 - len(self.player1hand) > len(self.letters.bag):
                 new = self.letters.assign(len(self.letters.bag))
             else:
                 new = self.letters.assign(7 - len(self.player1hand))
             for letter in new:
                 self.player1hand.append(letter)
-        if self.player == 2:
+        elif self.player == 2:
+            self.player2hand = [e for e in self.player2hand if e not in self.letterThisTurn]
             if 7 - len(self.player2hand) > len(self.letters.bag):
                 new = self.letters.assign(len(self.letters.bag))
             else:
                 new = self.letters.assign(7 - len(self.player2hand))
             for letter in new:
                 self.player2hand.append(letter)
+        self.letterThisTurn.clear()
 
     def validatePlay(self):
         self.words = self.getWordsBoard()
-        print(self.words)
         beginning = []
         end = []
         if self.firstTurn == 1:
@@ -387,7 +398,7 @@ class Game:
                         #print("Is it down?")
                         self.word = self.board[i][j].strip()
                         x_y = [dir,j+1, i+1]
-                        j2 = j+1
+                        j2 = j
                         while found == False:
                             if self.board[i][j2+1] != None:
                                 self.word += self.board[i][j2+1].strip()
@@ -456,9 +467,6 @@ class Game:
             beginning = []
             end = []
             double,triple = 0,0
-            print("Inside calculate")
-            print(self.words)
-            print(self.word)
             beginning.append(self.words[self.word][1])
             beginning.append(self.words[self.word][2])
             end.append(self.words[self.word][3])
@@ -520,15 +528,12 @@ class Game:
 
     def getLetter(self):
         for i in range(1, 8):
-            # print(x1,y1)
             if x1 > (80 + i * 40) and x1 < (120 + i * 40) and y1 > 350 and y1 < 400:
-                # print("HEHEHE")
                 return self.player1hand[i - 1]
 
     def getTile(self):
         for i in range(1, 16):
             for j in range(1, 16):
-                # print("Salut")
                 if x2 > (10 + i * 28) and x2 < (38 + i * 28) and y2 > (10 + j * 28) and y2 < (38 + j * 28):
                     return (i, j)
 
