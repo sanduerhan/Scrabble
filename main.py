@@ -431,7 +431,6 @@ class Game:
         else:
             return 0
 
-
     def calculateWordScore(self):
         if self.word not in self.oldWords:
             wordScore = 0
