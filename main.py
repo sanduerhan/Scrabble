@@ -34,10 +34,15 @@ LETTER_VALUES = {"A": 1,
                  "X": 8,
                  "Y": 4,
                  "Z": 10}
-TRIPLE_WORD_SCORE = ((1,1), (8, 1), (15,1), (1, 8), (15, 8), (1, 15), (8, 15), (15,15))
-DOUBLE_WORD_SCORE = ((2,2), (3,3), (4,4), (5,5), (2, 14), (3, 13), (4, 12), (5, 11), (14, 2), (13, 3), (12, 4), (11, 5), (14,14), (13, 13), (12,12), (11,11))
-TRIPLE_LETTER_SCORE = ((2,6), (2, 10), (6,2), (6,6), (6,10), (6,14), (10,2), (10,6), (10,10), (10,14), (14, 6), (14,10))
-DOUBLE_LETTER_SCORE = ((1, 4), (1,12), (3,7), (3,9), (4,1), (4,8), (4,15), (7,3), (7,7), (7,9), (7,13), (8,4), (8,12), (9,3), (9,7), (9,9), (9, 13), (12,1), (12,8), (12,15), (13,7), (13,9), (15, 4), (15, 12))
+TRIPLE_WORD_SCORE = ((1, 1), (8, 1), (15, 1), (1, 8), (15, 8), (1, 15), (8, 15), (15, 15))
+DOUBLE_WORD_SCORE = (
+    (2, 2), (3, 3), (4, 4), (5, 5), (2, 14), (3, 13), (4, 12), (5, 11), (14, 2), (13, 3), (12, 4), (11, 5), (14, 14),
+    (13, 13), (12, 12), (11, 11))
+TRIPLE_LETTER_SCORE = (
+    (2, 6), (2, 10), (6, 2), (6, 6), (6, 10), (6, 14), (10, 2), (10, 6), (10, 10), (10, 14), (14, 6), (14, 10))
+DOUBLE_LETTER_SCORE = (
+    (1, 4), (1, 12), (3, 7), (3, 9), (4, 1), (4, 8), (4, 15), (7, 3), (7, 7), (7, 9), (7, 13), (8, 4), (8, 12), (9, 3),
+    (9, 7), (9, 9), (9, 13), (12, 1), (12, 8), (12, 15), (13, 7), (13, 9), (15, 4), (15, 12))
 play = True
 endTurn = False
 letterScores = [1, 3, 3, 2, 1, 4, 2, 4, 1, 8, 5, 1, 3, 1, 1, 3, 10, 1, 1, 1, 1, 4, 4, 8, 4, 10]
@@ -123,8 +128,6 @@ class Game:
         self.displayTiles()
         self.gamevsPlayer()
 
-
-
     def createBoard(self):
         global start
         for i in range(1, 16):
@@ -181,41 +184,40 @@ class Game:
             if x1 != -1 and y1 != -1 and self.started == 1:
                 self.letterToPlace = self.getLetter()
                 self.letterThisTurn.append(self.letterToPlace)
-                #print(self.letterToPlace)
+                # print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
-                #print(tileX,tileY)
-                thisTuple = (tileX,tileY)
+                # print(tileX,tileY)
+                thisTuple = (tileX, tileY)
                 if thisTuple not in self.tilesOccupied:
                     self.tilesOccupied.append(thisTuple)
                     self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
-            if endTurn == True:
-                #print("Endturn")
+            if endTurn:
+                # print("Endturn")
                 self.changePlayer()
         elif self.player == 2:
             endTurn = False
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
-                #print("here")
+                # print("here")
                 self.letterToPlace = self.getLetter()
                 self.letterThisTurn.append(self.letterToPlace)
-                #print(self.letterToPlace)
+                # print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
                 thisTuple = (tileX, tileY)
                 if thisTuple not in self.tilesOccupied:
                     self.tilesOccupied.append(thisTuple)
                     self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
-            if endTurn == True:
+            if endTurn:
                 self.changePlayer()
-        window.after(10,self.gamevsPlayer)
+        window.after(10, self.gamevsPlayer)
 
     def displayScores(self):
         nr = Label(self.canvas2, text=self.player1score, font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=400, y=135)
         nr = Label(self.canvas2, text=self.player2score, font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=400, y=160)
-
 
     def playOrder(self):
         nr = Label(self.canvas2, text=self.player, font="Helvetica 15 bold", background="#D8DBE2")
@@ -229,7 +231,7 @@ class Game:
         self.canvas2.create_text((80, 40), text="Words used in game: ", font="Helvetica 11 ")
         i = 0
         j = 0
-        for word in self.oldWords:
+        for word in self.oldWords.keys():
             nr = tk.Label(self.canvas2, text=word, font="Helvetica 8", background="#D8DBE2")
             if i <= 15:
                 nr.place(x=5, y=50 + i * 15)
@@ -247,7 +249,7 @@ class Game:
                 textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
                 i += 1
                 self.textsId.append(textId)
-        if self.player == 2:
+        elif self.player == 2:
             i = 0
             for letter in self.player2hand:
                 text2Id = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
@@ -259,7 +261,7 @@ class Game:
             for letter in self.player1hand:
                 index = self.player1hand.index(letter)
                 self.canvas2.delete(self.textsId[index])
-        if self.player == 2:
+        elif self.player == 2:
             for letter in self.player2hand:
                 index = self.player2hand.index(letter)
                 self.canvas2.delete(self.texts2Id[index])
@@ -267,7 +269,7 @@ class Game:
     def placeLetter(self, x, y, letter, player):
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
-        self.board[x-1][y-1] = letter
+        self.board[x - 1][y - 1] = letter
         if x == 8 and y == 8:
             self.canvas.delete(start)
         if player == 1:
@@ -280,7 +282,7 @@ class Game:
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
         coordinates = self.canvas.coords(letterToUndo)
-        #print(letterToUndo)
+        # print(letterToUndo)
         x = round(coordinates[0])
         y = round(coordinates[1])
         self.canvas.delete(letterToUndo)
@@ -292,12 +294,13 @@ class Game:
         self.calculateWordScore()
         endTurn = True
         self.reload()
-        print(self.player1hand)
         self.hideTiles()
         self.changePlayer()
         self.displayTiles()
         self.playOrder()
         self.displayTilesLeft()
+        self.showOldWords()
+        self.displayScores()
 
     def changePlayer(self):
         if self.player == 1:
@@ -307,13 +310,13 @@ class Game:
 
     def passTurn(self):
         global endTurn
-        self.hideTiles()
-        self.reload()
         endTurn = True
+        self.hideTiles()
         self.changePlayer()
         self.displayTiles()
         self.playOrder()
         self.displayTilesLeft()
+        self.showOldWords()
 
     def exchangeTiles(self):
         global endTurn
@@ -325,6 +328,7 @@ class Game:
             self.displayTiles()
             self.playOrder()
             self.displayTilesLeft()
+            self.showOldWords()
         elif self.player == 2:
             self.hideTiles()
             self.player2hand = self.letters.assign(7)
@@ -333,9 +337,9 @@ class Game:
             self.displayTiles()
             self.playOrder()
             self.displayTilesLeft()
+            self.showOldWords()
 
     def reload(self):
-
         if self.player == 1:
             self.player1hand = [e for e in self.player1hand if e not in self.letterThisTurn]
             if 7 - len(self.player1hand) > len(self.letters.bag):
@@ -365,7 +369,10 @@ class Game:
             end.append(self.words[self.word][4])
             if beginning[0] > 8 or end[0] < 8:
                 messagebox.showerror("Error", "First play should be in center")
-                self.firstTurn = 0
+            self.firstTurn = 0
+        for word in self.words.keys():
+            if word not in self.oldWords:
+                self.word = word
         for word in self.words:
             if word not in self.validWords:
                 messagebox.showerror("Error", word + " not in dictionary")
@@ -389,43 +396,46 @@ class Game:
         return False
 
     def getWordsBoard(self):
-        found = False
         for i in range(15):
             for j in range(15):
-                if self.board[i][j] != None:
+                if self.board[i][j] is not None:
+                    found = False
                     dir = self.direction(i, j)
-                    if dir == 2:
-                        #print("Is it down?")
-                        self.word = self.board[i][j].strip()
-                        x_y = [dir,j+1, i+1]
+                    print(dir)
+                    if dir == 2 or dir == 5:
+                        print("Is it down?")
+                        print(self.board)
+                        self.word = self.board[i][j]
+                        x_y = [dir, j + 1, i + 1]
                         j2 = j
-                        while found == False:
-                            if self.board[i][j2+1] != None:
-                                self.word += self.board[i][j2+1].strip()
+                        while not found:
+                            print(self.board[i][j2+1])
+                            if self.board[i][j2 + 1] is not None:
+                                self.word += self.board[i][j2 + 1]
                             else:
                                 found = True
-                                x_y.append(j2+1)
-                                x_y.append(i+1)
+                                x_y.append(j2 + 1)
+                                x_y.append(i + 1)
                             j2 += 1
                         self.words[self.word] = x_y
-                    if dir == 3:
-                        self.word = self.board[i][j].strip()
-                        #print("Aici ai venit?")
-                        x_y = [dir,j+1, i+1]
+                    elif dir == 3 or dir == 8:
+                        self.word = self.board[i][j]
+                        print("Aici ai venit?")
+                        x_y = [dir, j + 1, i + 1]
                         i2 = i
-                        while found == False:
-                            if self.board[i2+1][j]!= None:
-                                self.word += self.board[i2+1][j].strip()
+                        while not found:
+                            if self.board[i2 + 1][j] is not None:
+                                self.word += self.board[i2 + 1][j]
                             else:
                                 found = True
-                                x_y.append(j+1)
-                                x_y.append(i2+1)
+                                x_y.append(j + 1)
+                                x_y.append(i2 + 1)
                             i2 += 1
                         self.words[self.word] = x_y
-        #print(self.words)
+                        dir -= 3
+
+        print(self.words)
         return self.words
-
-
 
     def direction(self, i, j):
         down = 0
@@ -433,27 +443,27 @@ class Game:
         left = 0
         up = 0
         if i == 1 and j == 1:
-            if self.board[i][j+1] != None:
+            if self.board[i][j + 1] is not None:
                 down = 1
-            if self.board[i + 1][j] != None:
+            if self.board[i + 1][j] is not None:
                 right = 1
-        if self.board[i-1][j] != None:
+        if self.board[i - 1][j] is not None:
             left = 1
-        if self.board[i][j-1] != None:
+        if self.board[i][j - 1] is not None:
             up = 1
         if left == 0 and up == 0:
-            if self.board[i+1][j] != None:
+            if self.board[i + 1][j] is not None:
                 right = 1
-            if self.board[i][j+1] != None:
+            if self.board[i][j + 1] is not None:
                 down = 1
         elif left == 0:
-            if self.board[i+1][j] != None:
+            if self.board[i + 1][j] is not None:
                 right = 1
         elif up == 0:
-            if self.board[i][j + 1] != None:
+            if self.board[i][j + 1] is not None:
                 down = 1
-        # if down == 1 and right == 1:
-        # return 1
+        if down == 1 and right == 1:
+            return 8
         if down == 1:
             return 2
         elif right == 1:
@@ -462,50 +472,53 @@ class Game:
             return 0
 
     def calculateWordScore(self):
+        print("this is the word" + self.word)
         if self.word not in self.oldWords:
             wordScore = 0
             beginning = []
             end = []
-            double,triple = 0,0
+            double, triple = 0, 0
             beginning.append(self.words[self.word][1])
             beginning.append(self.words[self.word][2])
             end.append(self.words[self.word][3])
             end.append(self.words[self.word][4])
             direction = self.words[self.word][0]
             for letter in self.word:
-                if direction == 2:
+                if direction == 2 or direction == 8:
                     if tuple(beginning) in DOUBLE_LETTER_SCORE:
 
-                        wordScore += LETTER_VALUES[letter]*2
+                        wordScore += LETTER_VALUES[letter] * 2
                     elif tuple(beginning) in TRIPLE_LETTER_SCORE:
-                        wordScore += LETTER_VALUES[letter]*3
-                    elif tuple(beginning) in DOUBLE_WORD_SCORE:
-                        double = 1
-                    elif tuple(beginning) in TRIPLE_WORD_SCORE:
-                        triple = 1
-                    else:
-                        wordScore+= LETTER_VALUES[letter]
-                    beginning[0] = beginning[0]+1
-                elif direction == 3:
-                    if tuple(beginning) in DOUBLE_LETTER_SCORE:
-                        wordScore += LETTER_VALUES[letter]*2
-                    elif tuple(beginning) in TRIPLE_LETTER_SCORE:
-                        wordScore += LETTER_VALUES[letter]*3
+                        wordScore += LETTER_VALUES[letter] * 3
                     elif tuple(beginning) in DOUBLE_WORD_SCORE:
                         double = 1
                     elif tuple(beginning) in TRIPLE_WORD_SCORE:
                         triple = 1
                     else:
                         wordScore += LETTER_VALUES[letter]
-                    beginning[1] = beginning[1]+1
+                    beginning[0] = beginning[0] + 1
+                elif direction == 3 or direction == 5:
+                    if tuple(beginning) in DOUBLE_LETTER_SCORE:
+                        wordScore += LETTER_VALUES[letter] * 2
+                    elif tuple(beginning) in TRIPLE_LETTER_SCORE:
+                        wordScore += LETTER_VALUES[letter] * 3
+                    elif tuple(beginning) in DOUBLE_WORD_SCORE:
+                        double = 1
+                    elif tuple(beginning) in TRIPLE_WORD_SCORE:
+                        triple = 1
+                    else:
+                        wordScore += LETTER_VALUES[letter]
+                    beginning[1] = beginning[1] + 1
             if double == 1:
                 wordScore *= 2
             elif triple == 1:
                 wordScore *= 3
+
         if self.player == 1:
-            self.player1score+= wordScore
+            self.player1score += wordScore
         elif self.player == 2:
-            self.player2score+= wordScore
+            self.player2score += wordScore
+        self.oldWords[self.word] = beginning
         return wordScore
 
     def display(self, eventorigin):
@@ -527,15 +540,20 @@ class Game:
         self.canvas.bind('<Button-1>', self.displayBoard)
 
     def getLetter(self):
-        for i in range(1, 8):
-            if x1 > (80 + i * 40) and x1 < (120 + i * 40) and y1 > 350 and y1 < 400:
-                return self.player1hand[i - 1]
+        if self.player == 1:
+            for i in range(1, 8):
+                if (80 + i * 40) < x1 < (120 + i * 40) and 350 < y1 < 400:
+                    return self.player1hand[i - 1]
+        elif self.player == 2:
+            for i in range(1, 8):
+                if (80 + i * 40) < x1 < (120 + i * 40) and 350 < y1 < 400:
+                    return self.player2hand[i - 1]
 
     def getTile(self):
         for i in range(1, 16):
             for j in range(1, 16):
-                if x2 > (10 + i * 28) and x2 < (38 + i * 28) and y2 > (10 + j * 28) and y2 < (38 + j * 28):
-                    return (i, j)
+                if (10 + i * 28) < x2 < (38 + i * 28) and (10 + j * 28) < y2 < (38 + j * 28):
+                    return i, j
 
 
 window = Tk()
