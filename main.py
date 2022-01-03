@@ -318,6 +318,7 @@ class Game:
         self.playOrder()
         self.displayTilesLeft()
         self.showOldWords()
+        self.displayScores()
 
     def exchangeTiles(self):
         global endTurn
