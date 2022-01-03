@@ -84,6 +84,8 @@ class Game:
         self.letters = Bag()
         self.letters.createBag()
         self.player = 1
+        self.player1score = 0
+        self.player2score = 0
         self.oldWords = {}
         self.textsId = []
         self.texts2Id = []
@@ -170,8 +172,8 @@ class Game:
 
     def gamevsPlayer(self):
         self.playOrder()
+        self.displayScores()
         if self.player == 1:
-
             endTurn = False
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
@@ -203,6 +205,13 @@ class Game:
             if endTurn == True:
                 self.changePlayer()
         window.after(10,self.gamevsPlayer)
+
+    def displayScores(self):
+        nr = Label(self.canvas2, text=self.player1score, font="Helvetica 15 bold", background="#D8DBE2")
+        nr.place(x=400, y=135)
+        nr = Label(self.canvas2, text=self.player2score, font="Helvetica 15 bold", background="#D8DBE2")
+        nr.place(x=400, y=160)
+
 
     def playOrder(self):
         nr = Label(self.canvas2, text=self.player, font="Helvetica 15 bold", background="#D8DBE2")
@@ -336,9 +345,19 @@ class Game:
     def validatePlay(self):
         self.words = self.getWordsBoard()
         print(self.words)
+        beginning = []
+        end = []
+        if self.firstTurn == 1:
+            beginning.append(self.words[self.word][1])
+            beginning.append(self.words[self.word][2])
+            end.append(self.words[self.word][3])
+            end.append(self.words[self.word][4])
+            if beginning[0] > 8 or end[0] < 8:
+                messagebox.showerror("Error", "First play should be in center")
+                self.firstTurn = 0
         for word in self.words:
             if word not in self.validWords:
-                messagebox.showerror("Error", word + "not in dictionary")
+                messagebox.showerror("Error", word + " not in dictionary")
                 return False
         lastRound = {}
         for word in self.oldWords.keys():
@@ -365,31 +384,31 @@ class Game:
                 if self.board[i][j] != None:
                     dir = self.direction(i, j)
                     if dir == 2:
+                        #print("Is it down?")
                         self.word = self.board[i][j].strip()
-                        x_y = [dir,i+1, j+1]
-                        j2 = j
+                        x_y = [dir,j+1, i+1]
+                        j2 = j+1
                         while found == False:
-                            if j2 < 15:
-                                if self.board[i][j2+i] != None:
-                                    self.word += self.board[i][j2+1].strip()
-                                else:
-                                    found = True
-                                j2 += 1
-                            elif j2 >= 15:
+                            if self.board[i][j2+1] != None:
+                                self.word += self.board[i][j2+1].strip()
+                            else:
                                 found = True
+                                x_y.append(j2+1)
+                                x_y.append(i+1)
+                            j2 += 1
                         self.words[self.word] = x_y
                     if dir == 3:
                         self.word = self.board[i][j].strip()
                         #print("Aici ai venit?")
-                        x_y = [dir,i+1, j+1]
+                        x_y = [dir,j+1, i+1]
                         i2 = i
                         while found == False:
                             if self.board[i2+1][j]!= None:
                                 self.word += self.board[i2+1][j].strip()
                             else:
                                 found = True
-                                x_y.append(i2)
-                                x_y.append(j)
+                                x_y.append(j+1)
+                                x_y.append(i2+1)
                             i2 += 1
                         self.words[self.word] = x_y
         #print(self.words)
@@ -461,7 +480,6 @@ class Game:
                     beginning[0] = beginning[0]+1
                 elif direction == 3:
                     if tuple(beginning) in DOUBLE_LETTER_SCORE:
-                        print("You enter here?")
                         wordScore += LETTER_VALUES[letter]*2
                     elif tuple(beginning) in TRIPLE_LETTER_SCORE:
                         wordScore += LETTER_VALUES[letter]*3
@@ -476,6 +494,10 @@ class Game:
                 wordScore *= 2
             elif triple == 1:
                 wordScore *= 3
+        if self.player == 1:
+            self.player1score+= wordScore
+        elif self.player == 2:
+            self.player2score+= wordScore
         return wordScore
 
     def display(self, eventorigin):
