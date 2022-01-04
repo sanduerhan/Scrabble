@@ -142,7 +142,7 @@ class Game:
         self.word = ''
         menubar = Menu(window)
         play = Menu(menubar, tearoff=0)
-        play.add_command(label="vsComputer")
+        play.add_command(label="vsComputer", command=self.gamevsPC)
         play.add_command(label="vsPlayer", command=self.startGame)
         play.add_command(label="Exit", command=self.close)
         menubar.add_cascade(label="Play", menu=play)
@@ -243,6 +243,14 @@ class Game:
         self.playOrder()
         self.displayScores()
         if self.player == 1:
+            if len(self.letters.bag) == 0:
+                maxScore = self.player1score
+                if self.player2score > maxScore:
+                    maxScore = self.player2score
+                if maxScore == self.player1score:
+                    messagebox.showinfo("Winner", "Player 1 has won the game")
+                else :
+                    messagebox.showinfo("Winner", "Player 2 has won the game")
             endTurn = False
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
@@ -260,6 +268,14 @@ class Game:
                 # print("Endturn")
                 self.changePlayer()
         elif self.player == 2:
+            if len(self.letters.bag) == 0:
+                maxScore = self.player1score
+                if self.player2score > maxScore:
+                    maxScore = self.player2score
+                if maxScore == self.player1score:
+                    messagebox.showinfo("Winner", "Player 1 has won the game")
+                else :
+                    messagebox.showinfo("Winner", "Player 2 has won the game")
             endTurn = False
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
@@ -276,6 +292,72 @@ class Game:
             if endTurn:
                 self.changePlayer()
         window.after(10, self.gamevsPlayer)
+
+    def gamevsPC(self):
+        self.started = 1
+        self.player1hand = self.letters.assign(7)
+        self.player2hand = self.letters.assign(7)
+        self.displayTilesPC()
+        self.gamePC()
+    def gamePC(self):
+        print("Que pasa?")
+        self.playOrder()
+        self.displayScores()
+        if self.player == 1:
+
+            endTurn = False
+            self.displayTilesLeft()
+            if x1 != -1 and y1 != -1 and self.started == 1:
+                self.letterToPlace = self.getLetter()
+                self.letterThisTurn.append(self.letterToPlace)
+                # print(self.letterToPlace)
+            if x2 != -1 and y2 != -1 and self.started == 1:
+                tileX, tileY = self.getTile()
+                # print(tileX,tileY)
+                thisTuple = (tileX, tileY)
+                if thisTuple not in self.tilesOccupied:
+                    self.tilesOccupied.append(thisTuple)
+                    self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
+            if endTurn:
+                # print("Endturn")
+                self.changePlayer()
+        elif self.player == 2:
+            if self.firstTurn == 1:
+                word,details = self.findWordStartBlank()
+                x = details[1]
+                y = details[2]
+                i = 0
+                for letter in word and i < len(word):
+                    self.placeLetterPC(x,y,letter)
+                    y+=1
+                    i+=1
+            else:
+                word,details = self.findWordStartLetter()
+                x = details[1]
+                y = details[2]
+                i = 0
+                dir = details[0]
+                if dir == 1:
+                    for letter in word and i < len(word):
+                        self.placeLetterPC(x, y, letter)
+                        y += 1
+                        i += 1
+                elif dir == 2:
+                    for letter in word and i<len(word):
+                        self.placeLetterPC(x, y, letter)
+                        x += 1
+                        i += 1
+            self.word = word
+            self.calculateWordScore()
+            self.reload()
+            self.changePlayer()
+            self.displayTiles()
+            self.playOrder()
+            self.displayTilesLeft()
+            self.showOldWords()
+            self.displayScores()
+
+        window.after(10, self.gamevsPC)
 
     def displayScores(self):
         """
@@ -341,6 +423,15 @@ class Game:
                 i += 1
                 self.texts2Id.append(text2Id)
 
+    def displayTilesPC(self):
+        self.textsId.clear()
+        if self.player == 1:
+            i = 0
+            for letter in self.player1hand:
+                textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+                i += 1
+                self.textsId.append(textId)
+
     def hideTiles(self):
         """
         when a turn is completed the players' tile will be hidden
@@ -380,6 +471,14 @@ class Game:
         elif player == 2:
             index = self.player2hand.index(letter)
             self.canvas2.delete(self.texts2Id[index])
+
+    def placeLetterPC(self, x, y, letter):
+        item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
+        self.lettersPlaced.append(item)
+        self.board[x - 1][y - 1] = letter
+        if x == 8 and y == 8:
+            self.canvas.delete(start)
+
 
     def undoLetter(self):
         letterToUndo = self.lettersPlaced.pop()
@@ -750,6 +849,68 @@ class Game:
             for j in range(1, 16):
                 if (10 + i * 28) < x2 < (38 + i * 28) and (10 + j * 28) < y2 < (38 + j * 28):
                     return i, j
+
+    def getLetterFromBoard(self):
+        """
+        For a tile checks if on the tile above or the tile on the right there is a letter
+        :return: A dictionary with the letters that can be beginnings of a word including its direction right/down and
+        the tile row and column
+        """
+        places = {}
+        for i in range(15):
+            for j in range(15):
+                if self.board[i + 1][j + 1] is not None:
+                    if self.board[i][j+1] is not None and self.board[i + 1][j + 2] is None:
+                        places[self.board[i+1][j+1]] = (1,i+1,j+1)
+                    elif self.board[i+1][j+2] is not None and self.board[i][j+1] is None:
+                        places[self.board[i+1][j+1]] = (2,i+1,j+1)
+        return places
+
+
+    def findWordStartBlank(self):
+        possibleWords = {}
+        score = 0
+        maxScore = 0
+        letters = self.player2hand
+        for word in self.validWords:
+            arr = [x for x in word]
+            if set(arr).issubset(set(letters)):
+                for letter in arr:
+                    score += LETTER_VALUES[letter]
+                possibleWords[word] = (score, 1,8,8)
+        for value in possibleWords.values():
+            if value > maxScore:
+                maxScore = value
+        for word, points in possibleWords.items():
+            if points[0] == maxScore:
+                maxWord = word
+        return maxWord, possibleWords[maxWord]
+
+    def findWordStartLetter(self):
+        letters = self.getLetterFromBoard()
+        possibleWords = {}
+        hand = self.player2hand
+        score = 0
+        for word in self.validWords:
+            arr = [x for x in word]
+            if set(arr).issubset(set(hand)) and word[0] in letters:
+                for letter in arr:
+                    score += LETTER_VALUES[letter]
+                possibleWords[word] = (score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2])
+        for value in possibleWords.values():
+            if value > maxScore:
+                maxScore = value
+        for word, points in possibleWords.items():
+            if points[0] == maxScore:
+                maxWord = word
+        return maxWord, possibleWords[maxWord]
+
+
+
+
+
+
+
 
 
 window = Tk()
