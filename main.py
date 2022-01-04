@@ -56,9 +56,16 @@ my_file = open(sys.argv[1], 'r')
 
 class Bag(object):
     def __init__(self):
+        """
+        initializes the bag which will contain all the tiles throughout the game
+        """
         self.bag = []
 
-    def createBag(self):  # creaza cele 98 de litere
+    def createBag(self):
+        """
+        creates the bag containing all the 98 tiles, repeating each letter the number of times desired by the rules of the game
+        :return:
+        """
         # k = 0
         for i in range(26):
             for j in range(letterDistribution[i]):
@@ -66,6 +73,11 @@ class Bag(object):
                 # k += 1
 
     def assign(self, tiles):
+        """
+        selects a number of random tiles from the bag, decreases the size of the bag
+        :param tiles: number of tiles that has to be assigned to a player
+        :return: tilesDrawn which are new tiles that will be assigned to the player
+        """
         tilesDrawn = []
         for i in range(0, tiles):
             number = random.randint(0, len(self.bag) - 1)
@@ -74,12 +86,29 @@ class Bag(object):
         return tilesDrawn
 
     def exchange(self, tile):
+        """
+        :param tile: number of tiles to exchange
+        :return:
+        """
         self.bag.append(tile)
 
 
 class Game:
-    def __init__(self, window):
 
+    def __init__(self, window):
+        """
+        initializing all the parameters for the game : players' hands that will contain the tiles of each player
+        players' score beginning with 0 for both
+        the bag containing in the beginning all 98 tiles
+        the board matrix in which the letters will be placed
+        validWords containing all the valid words from the official dictionary
+        words dictionary containing all the words on the board
+        oldWords dictionary containing all the words already played by someone
+        2 canvases : one with the board and another one with players' hands/scores/nrTiles
+        the menu bar with the two options to play : against another player and against the computer
+        also initializing the functions to get the coordinates from the mouse click
+        :param window: the root window in which the game is displayed
+        """
         self.scores = letterScores
         Dict = my_file
         self.validWords = []
@@ -125,6 +154,13 @@ class Game:
         window.destroy()
 
     def startGame(self):
+        """
+        start of the game against another player
+        initializing the hands of the two players
+        sets the variable started to True
+        displays the Tiles of the first player
+        and starts the Game
+        """
         self.started = 1
         self.player1hand = self.letters.assign(7)
         self.player2hand = self.letters.assign(7)
@@ -132,6 +168,13 @@ class Game:
         self.gamevsPlayer()
 
     def createBoard(self):
+        """
+        draws the 15x15 board on the first canvas
+        depending on type of the tile it is colored with a different colour
+        having 5 types of tiles therefore 5 background colours that can be assigned for each rectangle
+        creates a small legend at the bottom with the meaning of each colour
+        :return:
+        """
         global start
         for i in range(1, 16):
             for j in range(1, 16):
@@ -158,6 +201,19 @@ class Game:
         self.canvas.create_text((100, 560), text="Triple Letter")
 
     def createFrame(self):
+        """
+        putting widgets on the second canvas:
+        creating the space where will be displayed all the words already played during the game
+        creating the space where will be displayed the scores of the two player as well the number of tiles left in the bag
+        as well as whose turn is it
+        drawing the 7 rectangles where the letters of the players will be shown
+        creating the 4 buttons with the options that a player has at his turn :
+        play the word and pass the turn
+        exchange his letters and giving the turn to the other player
+        pass turn without exchanging letter and playing anything
+        undo letter
+        :return:
+        """
         self.canvas2.create_text((80, 40), text="Words used in game: ", font="Helvetica 11 ")
         for word in self.oldWords:
             nr = tk.Label(self.canvas2, text=word, font="Helvetica 9", background="#D8DBE2")
@@ -177,6 +233,11 @@ class Game:
         btn.place(x=265, y=450)
         btn = tk.Button(self.canvas2, text="Exchange", bd='3', bg="#F9A620", width=10, command=self.exchangeTiles)
         btn.place(x=345, y=450)
+        i = 0
+        for letter in LETTER_VALUES.keys():
+            self.canvas2.create_text((15+i, 550), text=letter, font="Helvetica 8 ")
+            self.canvas2.create_text((15+i+8, 550), text=LETTER_VALUES[letter], font="Helvetica 8")
+            i += 18.5
 
     def gamevsPlayer(self):
         self.playOrder()
@@ -217,20 +278,36 @@ class Game:
         window.after(10, self.gamevsPlayer)
 
     def displayScores(self):
+        """
+        will display at each turn the updated scores of the players
+        :return:
+        """
         nr = Label(self.canvas2, text=self.player1score, font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=400, y=135)
         nr = Label(self.canvas2, text=self.player2score, font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=400, y=160)
 
     def playOrder(self):
+        """
+        will display at each round the turn of which player it is 1/2
+        :return:
+        """
         nr = Label(self.canvas2, text=self.player, font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=275, y=285)
 
     def displayTilesLeft(self):
+        """
+        will display at each turn the number of tiles left in the bag
+        :return:
+        """
         nr = Label(self.canvas2, text=len(self.letters.bag), font="Helvetica 15 bold", background="#D8DBE2")
         nr.place(x=400, y=200)
 
     def showOldWords(self):
+        """
+        after each round if a word is played it will be shown in the space for the used words
+        :return:
+        """
         self.canvas2.create_text((80, 40), text="Words used in game: ", font="Helvetica 11 ")
         i = 0
         j = 0
@@ -244,6 +321,11 @@ class Game:
                 j += 1
 
     def displayTiles(self):
+        """
+        assigning an ID for each letter placed on the canvas in order to be able delete it later
+        then displaying the hand of the player whose turn it is
+        :return:
+        """
         self.textsId.clear()
         self.texts2Id.clear()
         if self.player == 1:
@@ -260,6 +342,11 @@ class Game:
                 self.texts2Id.append(text2Id)
 
     def hideTiles(self):
+        """
+        when a turn is completed the players' tile will be hidden
+        by deleting the letter based on the ID of the widget
+        :return:
+        """
         if self.player == 1:
             for item in self.textsId:
                 self.canvas2.delete(item)
@@ -271,6 +358,17 @@ class Game:
                 self.canvas2.delete(item)
 
     def placeLetter(self, x, y, letter, player):
+        """
+        having clicked once on the letter and once on a tile on the board
+        having the information about which tile it is, this function will place the letter on the specified tile
+        it will delete the letter from the players' hand
+        and it will delete the text "start" if the letter will be placed on the center rectangle of the board
+        :param x: the number of tile on x axis
+        :param y: the number of tile on y axis
+        :param letter: the letter to be placed on the board
+        :param player: whose turn it is
+        :return:
+        """
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
         self.board[x - 1][y - 1] = letter
@@ -290,6 +388,17 @@ class Game:
         self.displayTiles()
 
     def playTurn(self):
+        """
+        the functions which will be called when a player has clicked the Play button
+        validating the word placed
+        calculating the score of that word
+        reloading the player's hand with the new letter
+        hiding his tiles
+        changing the player to the other one
+        displaying the new player's hand
+        displaying whose turn it is, the number of tiles left, the old words, and the scores of the players
+        :return:
+        """
         global endTurn
         self.validatePlay()
         self.calculateWordScore()
@@ -304,12 +413,22 @@ class Game:
         self.displayScores()
 
     def changePlayer(self):
+        """
+        changing the variable player to the other one
+        :return:
+        """
         if self.player == 1:
             self.player = 2
         elif self.player == 2:
             self.player = 1
 
     def passTurn(self):
+        """
+        when a player passes his turn it will hide his tiles
+        change the player to the other one, display whose turn it is,
+        the number of tiles left, the old words and the players' scores
+        :return:
+        """
         global endTurn
         endTurn = True
         self.hideTiles()
@@ -321,6 +440,11 @@ class Game:
         self.displayScores()
 
     def exchangeTiles(self):
+        """
+        when a player clicks the button exchange it will assign a whole new hand for that player
+        meaning 7 new letters with the other 7 being discarded
+        :return:
+        """
         global endTurn
         if self.player == 1:
             self.hideTiles()
@@ -342,6 +466,13 @@ class Game:
             self.showOldWords()
 
     def reload(self):
+        """
+        reloading the player's hand after he played the turn(placed a valid word on the board)
+        depending on how many letters the player placed, the same amount will be then assigned to the player
+        however, if there aren't enough tiles in the bag, the tiles left in the bag will all be assigned to the player
+        meaning he can remain with any amount of letters less than 7
+        :return:
+        """
         if self.player == 1:
             self.player1hand = [e for e in self.player1hand if e not in self.letterThisTurn]
             if 7 - len(self.player1hand) > len(self.letters.bag):
@@ -361,6 +492,13 @@ class Game:
         self.letterThisTurn.clear()
 
     def validatePlay(self):
+        """
+        the function to validate if the word which is played is valid
+        first it will check if it is the first turn of the game if the word is on the center tile which is mandatory
+        then it check if the word played is in the dictionary
+        :return: True is the play is valid
+        False otherwise
+        """
         self.words = self.getWordsBoard()
         beginning = []
         end = []
@@ -398,20 +536,23 @@ class Game:
         return False
 
     def getWordsBoard(self):
+        """
+        Gets all the words from the board, checking tile by tile until a tile which is the beginning of the word is found
+        then depending of the direction in which the words goes, it will start to identify the next letters and append them to the word
+        when there are no more letters in that direction found becomes True and the word is appended to the words dictionary.
+        :return: The words that are at the moment on the board with the direction in which the word is going
+        the tile that is the beginning of the word and the tile which is the end of the word
+        """
         for i in range(15):
             for j in range(15):
                 if self.board[i][j] is not None:
                     found = False
                     dir = self.direction(i, j)
-                    print(dir)
                     if dir == 2 or dir == 5:
-                        print("Is it down?")
-                        #print(self.board)
                         self.word = self.board[i][j]
                         x_y = [dir, j + 1, i + 1]
                         j2 = j
                         while not found:
-                            #print(self.board[i][j2+1])
                             if self.board[i][j2 + 1] is not None:
                                 self.word += self.board[i][j2 + 1]
                             else:
@@ -422,7 +563,6 @@ class Game:
                         self.words[self.word] = x_y
                     elif dir == 3 or dir == 8:
                         self.word = self.board[i][j]
-                        print("Is it right?")
                         x_y = [dir, j + 1, i + 1]
                         i2 = i
                         while not found:
@@ -437,13 +577,10 @@ class Game:
                         dir -= 3
                         if dir == 5:
                             found = False
-                            print("Is it down?")
-                            # print(self.board)
                             self.word = self.board[i][j]
                             x_y = [dir, j + 1, i + 1]
                             j2 = j
                             while not found:
-                                # print(self.board[i][j2+1])
                                 if self.board[i][j2 + 1] is not None:
                                     self.word += self.board[i][j2 + 1]
                                 else:
@@ -457,6 +594,16 @@ class Game:
         return self.words
 
     def direction(self, i, j):
+        """
+        Gives the direction of a word based on its beginning
+        Checks for the specific tile the tiles surrounding it to see if those contain any letters
+        :param i: The row of the tile
+        :param j: The column of the tile
+        :return: 2 if the the tile is the beginning of a word, and the words goes down on the board
+        3 if the tile is beginning and the word goest to the right on the board
+        8 if the tile is beginning of two words, one that goes down and one to the right
+        0 if the tile is not the beginning of the word
+        """
         down = 0
         right = 0
         left = 0
@@ -491,6 +638,13 @@ class Game:
             return 0
 
     def calculateWordScore(self):
+        """
+        Calculates the score of the word letter by letter, checks if letter is on a special tile
+        and adds the score accordingly
+        It will calculate the score only if it is played this round (not a played word)
+        It will add to the player's score the score of the word for this turn
+        :return: The score of the word played in this round
+        """
         print("this is the word" + self.word)
         print(self.oldWords)
         if self.word not in self.oldWords:
@@ -542,12 +696,24 @@ class Game:
         return wordScore
 
     def display(self, eventorigin):
+        """
+        Displays on terminal the coordinates resulted after the click of the mouse on the second canvas
+        which is the canvas with the players' hands
+        :param eventorigin:
+        :return:
+        """
         global x1, y1
         x1 = eventorigin.x
         y1 = eventorigin.y
         print(x1, y1)
 
     def displayBoard(self, eventorigin):
+        """
+        Displays on terminal the coordinates resulted after the click of the mouse on the first canvas
+        which is the canvas with the board
+        :param eventorigin:
+        :return:
+        """
         global x2, y2
         x2 = eventorigin.x
         y2 = eventorigin.y
@@ -560,6 +726,11 @@ class Game:
         self.canvas.bind('<Button-1>', self.displayBoard)
 
     def getLetter(self):
+        """
+        Will check the coordinates of the click and if it is on the rectangles which contain the letters of a player
+        it will return that letter
+        :return: The letter that was clicked by the player
+        """
         if self.player == 1:
             for i in range(1, 8):
                 if (80 + i * 40) < x1 < (120 + i * 40) and 350 < y1 < 400:
@@ -570,6 +741,11 @@ class Game:
                     return self.player2hand[i - 1]
 
     def getTile(self):
+        """
+        Will check the coordinates of the click and if it is on a rectangle on the board
+        it will return that tile (specifically its row and column)
+        :return: The row and column of the tile clicked
+        """
         for i in range(1, 16):
             for j in range(1, 16):
                 if (10 + i * 28) < x2 < (38 + i * 28) and (10 + j * 28) < y2 < (38 + j * 28):
