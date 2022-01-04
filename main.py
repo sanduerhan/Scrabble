@@ -127,6 +127,7 @@ class Game:
         self.textsId = []
         self.texts2Id = []
         self.words = {}
+        self.pc = 0
         self.board = [[None for x in range(15)] for y in range(15)]
         self.tilesOccupied = []
         self.lettersPlaced = []
@@ -298,34 +299,39 @@ class Game:
         self.player1hand = self.letters.assign(7)
         self.player2hand = self.letters.assign(7)
         self.displayTilesPC()
+        self.pc = 1
         self.gamePC()
+
     def gamePC(self):
-        print("Que pasa?")
         self.playOrder()
         self.displayScores()
         if self.player == 1:
-
+            if len(self.letters.bag) == 0:
+                maxScore = self.player1score
+                if self.player2score > maxScore:
+                    maxScore = self.player2score
+                if maxScore == self.player1score:
+                    messagebox.showinfo("Winner", "Player 1 has won the game")
+                else :
+                    messagebox.showinfo("Winner", "Player 2 has won the game")
             endTurn = False
             self.displayTilesLeft()
             if x1 != -1 and y1 != -1 and self.started == 1:
                 self.letterToPlace = self.getLetter()
                 self.letterThisTurn.append(self.letterToPlace)
-                # print(self.letterToPlace)
             if x2 != -1 and y2 != -1 and self.started == 1:
                 tileX, tileY = self.getTile()
-                # print(tileX,tileY)
                 thisTuple = (tileX, tileY)
                 if thisTuple not in self.tilesOccupied:
                     self.tilesOccupied.append(thisTuple)
                     self.placeLetter(tileX, tileY, self.letterToPlace, self.player)
             if endTurn:
-                # print("Endturn")
                 self.changePlayer()
         elif self.player == 2:
             if self.firstTurn == 1:
                 word,details = self.findWordStartBlank()
-                x = details[1]
-                y = details[2]
+                x = details[2]
+                y = details[3]
                 i = 0
                 for letter in word and i < len(word):
                     self.placeLetterPC(x,y,letter)
@@ -333,31 +339,41 @@ class Game:
                     i+=1
             else:
                 word,details = self.findWordStartLetter()
-                x = details[1]
-                y = details[2]
-                i = 0
-                dir = details[0]
-                if dir == 1:
-                    for letter in word and i < len(word):
-                        self.placeLetterPC(x, y, letter)
-                        y += 1
-                        i += 1
-                elif dir == 2:
-                    for letter in word and i<len(word):
-                        self.placeLetterPC(x, y, letter)
-                        x += 1
-                        i += 1
             self.word = word
+            dir = details[1]
+            coord = [dir,details[2], details[3],0,0]
+            for letter in self.word:
+                if dir == 3:
+                    self.placeLetterPC(details[3], details[2], letter)
+                    details[3] += 1
+                    coord[3]=details[2]
+                    coord[4]=details[3]-1
+                if dir == 2:
+                    self.placeLetterPC(details[3], details[2], letter)
+                    details[2] += 1
+                    coord[3]=details[2]-1
+                    coord[4]=details[3]
+            self.words[word] = coord
+            print(self.words)
             self.calculateWordScore()
-            self.reload()
-            self.changePlayer()
-            self.displayTiles()
-            self.playOrder()
             self.displayTilesLeft()
             self.showOldWords()
             self.displayScores()
+            self.reload()
+            self.player2hand = [e for e in self.player2hand if e not in self.letterThisTurn]
+            if 7 - len(self.player2hand) > len(self.letters.bag):
+                new = self.letters.assign(len(self.letters.bag))
+            else:
+                new = self.letters.assign(7 - len(self.player2hand))
+            for letter in new:
+                self.player2hand.append(letter)
+            self.letterThisTurn.clear()
+            self.changePlayer()
+            self.hideTilesPC()
+            self.displayTilesPC()
 
-        window.after(10, self.gamevsPC)
+
+        window.after(10, self.gamePC)
 
     def displayScores(self):
         """
@@ -425,12 +441,11 @@ class Game:
 
     def displayTilesPC(self):
         self.textsId.clear()
-        if self.player == 1:
-            i = 0
-            for letter in self.player1hand:
-                textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
-                i += 1
-                self.textsId.append(textId)
+        i = 0
+        for letter in self.player1hand:
+            textId = self.canvas2.create_text((140 + i * 40, 375), text=letter, font="Helvetica 11 bold")
+            i += 1
+            self.textsId.append(textId)
 
     def hideTiles(self):
         """
@@ -447,6 +462,16 @@ class Game:
         elif self.player == 2:
             for item in self.texts2Id:
                 self.canvas2.delete(item)
+
+    def hideTilesPC(self):
+        """
+        when a turn is completed the players' tile will be hidden
+        by deleting the letter based on the ID of the widget
+        :return:
+        """
+        for item in self.textsId:
+            self.canvas2.delete(item)
+
 
     def placeLetter(self, x, y, letter, player):
         """
@@ -499,18 +524,33 @@ class Game:
         :return:
         """
         global endTurn
-        self.validatePlay()
-        self.calculateWordScore()
-        endTurn = True
-        self.reload()
-        self.hideTiles()
-        self.changePlayer()
-        self.displayTiles()
-        self.playOrder()
-        self.displayTilesLeft()
-        self.showOldWords()
-        self.displayScores()
-
+        if self.pc == 0:
+            self.validatePlay()
+            self.calculateWordScore()
+            endTurn = True
+            self.reload()
+            self.hideTiles()
+            self.changePlayer()
+            self.displayTiles()
+            self.playOrder()
+            self.displayTilesLeft()
+            self.showOldWords()
+            self.displayScores()
+            self.firstTurn = 0
+        else:
+            if self.player == 1:
+                self.validatePlay()
+                self.calculateWordScore()
+                endTurn = True
+                self.reload()
+                #self.hideTiles()
+                self.displayTilesPC()
+                self.changePlayer()
+                #self.playOrder()
+                self.displayTilesLeft()
+                self.showOldWords()
+                self.displayScores()
+                self.firstTurn = 0
     def changePlayer(self):
         """
         changing the variable player to the other one
@@ -744,8 +784,7 @@ class Game:
         It will add to the player's score the score of the word for this turn
         :return: The score of the word played in this round
         """
-        print("this is the word" + self.word)
-        print(self.oldWords)
+        print(self.words)
         if self.word not in self.oldWords:
             print("this is self word " + self.word)
             wordScore = 0
@@ -857,13 +896,21 @@ class Game:
         the tile row and column
         """
         places = {}
-        for i in range(15):
-            for j in range(15):
-                if self.board[i + 1][j + 1] is not None:
-                    if self.board[i][j+1] is not None and self.board[i + 1][j + 2] is None:
-                        places[self.board[i+1][j+1]] = (1,i+1,j+1)
-                    elif self.board[i+1][j+2] is not None and self.board[i][j+1] is None:
-                        places[self.board[i+1][j+1]] = (2,i+1,j+1)
+        for i in range(14):
+            for j in range(14):
+                if self.board[i][j] is not None:
+                    if self.board[i][j+1] is not None and self.board[i + 1][j] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
+                        print("first")
+                        places[self.board[i][j]] = (3,j+1,i+1)
+                    elif self.board[i+1][j] is not None and self.board[i][j+1] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
+                        print("second")
+                        places[self.board[i][j]] = (2,j+1,i+1)
+                    elif self.board[i+1][j] is None and self.board[i][j+1] is None and self.board[i][j-1] is not None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
+                        print("third")
+                        places[self.board[i][j]] = (3,j+1,i+1)
+                    elif self.board[i+1][j] is None and self.board[i][j+1] is None and self.board[i-1][j] is not None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
+                        print("fourth")
+                        places[self.board[i][j]] = (2,j+1,i+1)
         return places
 
 
@@ -877,10 +924,10 @@ class Game:
             if set(arr).issubset(set(letters)):
                 for letter in arr:
                     score += LETTER_VALUES[letter]
-                possibleWords[word] = (score, 1,8,8)
+                possibleWords[word] = [score, 1,8,8]
         for value in possibleWords.values():
-            if value > maxScore:
-                maxScore = value
+            if value[0] > maxScore:
+                maxScore = value[0]
         for word, points in possibleWords.items():
             if points[0] == maxScore:
                 maxWord = word
@@ -890,28 +937,37 @@ class Game:
         letters = self.getLetterFromBoard()
         possibleWords = {}
         hand = self.player2hand
+        print(hand)
+        print(letters)
         score = 0
+        maxScore = 0
         for word in self.validWords:
             arr = [x for x in word]
-            if set(arr).issubset(set(hand)) and word[0] in letters:
+            #print("wtf?")
+            if set(arr).issubset(set(hand)) and word[0] in letters and len(word) < 7 and word not in self.oldWords and letters[word[0]][1]+len(word)<16 and letters[word[0]][2]+len(word)<16:
                 for letter in arr:
+                    #print("here?")
                     score += LETTER_VALUES[letter]
-                possibleWords[word] = (score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2])
+                possibleWords[word] = [score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2]]
+            score = 0
+        print(possibleWords)
+        for word in list(possibleWords):
+            if self.two_same(word) is True:
+                del possibleWords[word]
         for value in possibleWords.values():
-            if value > maxScore:
-                maxScore = value
+            if value[0] > maxScore:
+                maxScore = value[0]
         for word, points in possibleWords.items():
             if points[0] == maxScore:
                 maxWord = word
         return maxWord, possibleWords[maxWord]
 
-
-
-
-
-
-
-
+    def two_same(self,string):
+        for i in range(len(string) - 1):
+            for j in range(i+1,len(string)):
+                if string[i] == string[j]:
+                    return True
+        return False
 
 window = Tk()
 window.title("Scrabble Game")
