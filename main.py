@@ -332,13 +332,14 @@ class Game:
                 word,details = self.findWordStartBlank()
                 x = details[2]
                 y = details[3]
-                i = 0
-                for letter in word and i < len(word):
+                for letter in word:
                     self.placeLetterPC(x,y,letter)
                     y+=1
-                    i+=1
             else:
                 word,details = self.findWordStartLetter()
+            if all( z == 0 for z in details):
+                print("PAssing turn?")
+                self.passTurn()
             self.word = word
             dir = details[1]
             coord = [dir,details[2], details[3],0,0]
@@ -360,19 +361,10 @@ class Game:
             self.showOldWords()
             self.displayScores()
             self.reload()
-            self.player2hand = [e for e in self.player2hand if e not in self.letterThisTurn]
-            if 7 - len(self.player2hand) > len(self.letters.bag):
-                new = self.letters.assign(len(self.letters.bag))
-            else:
-                new = self.letters.assign(7 - len(self.player2hand))
-            for letter in new:
-                self.player2hand.append(letter)
             self.letterThisTurn.clear()
-            self.changePlayer()
             self.hideTilesPC()
             self.displayTilesPC()
-
-
+            self.changePlayer()
         window.after(10, self.gamePC)
 
     def displayScores(self):
@@ -440,6 +432,11 @@ class Game:
                 self.texts2Id.append(text2Id)
 
     def displayTilesPC(self):
+        """
+        Displaying the tiles when the game is played against the PC
+        It will display only the tiles of the human player at each turn
+        :return:
+        """
         self.textsId.clear()
         i = 0
         for letter in self.player1hand:
@@ -453,6 +450,7 @@ class Game:
         by deleting the letter based on the ID of the widget
         :return:
         """
+        "Are you even hiding?"
         if self.player == 1:
             for item in self.textsId:
                 self.canvas2.delete(item)
@@ -469,6 +467,7 @@ class Game:
         by deleting the letter based on the ID of the widget
         :return:
         """
+        "Are you hiding them PC?"
         for item in self.textsId:
             self.canvas2.delete(item)
 
@@ -498,6 +497,14 @@ class Game:
             self.canvas2.delete(self.texts2Id[index])
 
     def placeLetterPC(self, x, y, letter):
+        """
+        Puts the letters of the word played by the PC on the board
+        if it is on the center tile, the word start is deleted
+        :param x: the number of tile on x axis
+        :param y: the number of tile on y axis
+        :param letter:  the letter to be placed on the board
+        :return:
+        """
         item = self.canvas.create_text((24 + x * 28, 26 + y * 28), text=letter)
         self.lettersPlaced.append(item)
         self.board[x - 1][y - 1] = letter
@@ -543,7 +550,7 @@ class Game:
                 self.calculateWordScore()
                 endTurn = True
                 self.reload()
-                #self.hideTiles()
+                self.hideTilesPC()
                 self.displayTilesPC()
                 self.changePlayer()
                 #self.playOrder()
@@ -568,15 +575,26 @@ class Game:
         the number of tiles left, the old words and the players' scores
         :return:
         """
+        #print("Passing turn")
         global endTurn
         endTurn = True
-        self.hideTiles()
-        self.changePlayer()
-        self.displayTiles()
-        self.playOrder()
-        self.displayTilesLeft()
-        self.showOldWords()
-        self.displayScores()
+        if self.pc == 0:
+            self.hideTiles()
+            self.changePlayer()
+            self.displayTiles()
+            self.playOrder()
+            self.displayTilesLeft()
+            self.showOldWords()
+            self.displayScores()
+        else:
+            print("which player is now that passing")
+            print(self.player)
+            self.hideTilesPC()
+            self.displayTilesPC()
+            self.changePlayer()
+            self.displayTilesLeft()
+            self.showOldWords()
+            self.displayScores()
 
     def exchangeTiles(self):
         """
@@ -891,7 +909,8 @@ class Game:
 
     def getLetterFromBoard(self):
         """
-        For a tile checks if on the tile above or the tile on the right there is a letter
+        For a tile checks if on the tile above or the tile on the right there is a letter, also checks for the tiles
+        on the diagonal to not have any letters on them
         :return: A dictionary with the letters that can be beginnings of a word including its direction right/down and
         the tile row and column
         """
@@ -899,7 +918,7 @@ class Game:
         for i in range(14):
             for j in range(14):
                 if self.board[i][j] is not None:
-                    if self.board[i][j+1] is not None and self.board[i + 1][j] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
+                    if self.board[i][j+1] is not None and self.board[i + 1][j] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None and self.board[i][j-1] is None:
                         print("first")
                         places[self.board[i][j]] = (3,j+1,i+1)
                     elif self.board[i+1][j] is not None and self.board[i][j+1] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
@@ -915,6 +934,10 @@ class Game:
 
 
     def findWordStartBlank(self):
+        """
+        If the PC starts, it will place the word on center
+        :return: The word with the maximum word and it's details
+        """
         possibleWords = {}
         score = 0
         maxScore = 0
@@ -934,6 +957,12 @@ class Game:
         return maxWord, possibleWords[maxWord]
 
     def findWordStartLetter(self):
+        """
+        Gets all the available letters from the board as word beginnings and tries to build words
+        Iterates through all the valid words and saves all possible words knowing the letters
+        Selects the word with the maximum score
+        :return: The word with maxScore and it's details (score,start tile, end tile)
+        """
         letters = self.getLetterFromBoard()
         possibleWords = {}
         hand = self.player2hand
@@ -951,9 +980,15 @@ class Game:
                 possibleWords[word] = [score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2]]
             score = 0
         print(possibleWords)
+        empty = ''
+        empty2 = [0,0,0,0]
+        # if not possibleWords:
+        #     self.passTurn()
         for word in list(possibleWords):
             if self.two_same(word) is True:
                 del possibleWords[word]
+        if not possibleWords:
+            self.passTurn()
         for value in possibleWords.values():
             if value[0] > maxScore:
                 maxScore = value[0]
@@ -963,6 +998,11 @@ class Game:
         return maxWord, possibleWords[maxWord]
 
     def two_same(self,string):
+        """
+        :param string: The word to be verified
+        :return: True if there are any double letters in the word
+        False otherwise
+        """
         for i in range(len(string) - 1):
             for j in range(i+1,len(string)):
                 if string[i] == string[j]:
