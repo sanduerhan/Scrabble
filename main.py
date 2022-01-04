@@ -926,12 +926,12 @@ class Game:
         the tile row and column
         """
         places = {}
-        for i in range(14):
-            for j in range(14):
+        for i in range(15):
+            for j in range(15):
                 if self.board[i][j] is not None:
                     if self.board[i][j+1] is None and self.board[i+1][j-1] is None and self.board[i+1][j+1] is None and self.board[i][j-1] is None and self.board[i-1][j+1] is None:
                         places[self.board[i][j]] = (2,j+1,i+1)
-                    elif self.board[i+1][j] is None and self.board[i+2][j] is None and self.board[i-1][j] is None and self.board[i+1][j+1] is None and self.board[i+1][j-1] is None:
+                    elif self.board[i+1][j] is None  and self.board[i-1][j] is None and self.board[i+1][j+1] is None and self.board[i+1][j-1] is None:
                         places[self.board[i][j]] = (3,j+1,i+1)
 
         return places
@@ -984,13 +984,15 @@ class Game:
         letterString = ''
         for letter in hand:
             letterString+=letter
+        for letter in letters.keys():
+            letterString+=letter
         for word in self.validWords:
-            if self.stringContainsString(word,letterString) and word[0] in letters and word not in self.oldWords:
+            if self.stringContainsString(word,letterString) and word[0] in letters and word not in self.oldWords and letters[word[0]][1]+len(word)<16 and letters[word[0]][2]+len(word)<16:
                 for letter in word:
                     score += LETTER_VALUES[letter]
                     possibleWords[word] = [score, letters[word[0]][0], letters[word[0]][1], letters[word[0]][2]]
             score = 0
-        print(possibleWords)
+        #print(possibleWords)
         if not possibleWords:
             self.passTurn()
         for value in possibleWords.values():
@@ -1001,26 +1003,21 @@ class Game:
                 maxWord = word
         return maxWord, possibleWords[maxWord]
 
-    def stringContainsString(self,s1,s2):
+    def stringContainsString(self,s1, s2):
         s1 = s1.upper()
         s2 = list(s2.upper())
-        for letter in s1:
-            if letter in s2:
-                s2.remove(letter)
-            else:
-                return False
-        return True
-
-    def two_same(self,string):
-        """
-        :param string: The word to be verified
-        :return: True if there are any double letters in the word
-        False otherwise
-        """
-        for i in range(len(string) - 1):
-            for j in range(i+1,len(string)):
-                if string[i] == string[j]:
-                    return True
+        letters = s2[:7]
+        length = len(s2)
+        x = length - 7
+        beginnings = s2[-x:]
+        if s1[0] in beginnings:
+            s2 = s1[1:]
+            for letter in s2:
+                if letter in letters:
+                    letters.remove(letter)
+                else:
+                    return False
+            return True
         return False
 
 window = Tk()
