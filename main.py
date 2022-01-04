@@ -242,6 +242,14 @@ class Game:
             i += 18.5
 
     def gamevsPlayer(self):
+        """
+        Function to run the game, depending on the player, it will check if it is the end of the game and then display the winner
+        otherwise it will follow on to check the clicks' of the mouse to check the coordinates of the letter to be placed and of the tile to be placed on
+        it will check the tile not to be occupied and then it will place the letter on the board and delete it from the hand
+        The second player here is also a human player so it will execute mainly the same thing, different being the variables such as
+        playerhand/playerscore
+        :return:
+        """
         self.playOrder()
         self.displayScores()
         if self.player == 1:
@@ -304,6 +312,14 @@ class Game:
         self.gamePC()
 
     def gamePC(self):
+        """
+        Function to run the game, depending on the player, it will check if it is the end of the game and then display the winner
+        otherwise it will follow on to check the clicks' of the mouse to check the coordinates of the letter to be placed and of the tile to be placed on
+        it will check the tile not to be occupied and then it will place the letter on the board and delete it from the hand
+        The second player here is the computer, it will check if it is the first turn and then will get the best word possible to be played on that round
+        and the word details, will place all the letters on the board and then end the turn and change the player
+        :return:
+        """
         self.playOrder()
         self.displayScores()
         if self.player == 1:
@@ -339,7 +355,6 @@ class Game:
             else:
                 word,details = self.findWordStartLetter()
             if all( z == 0 for z in details):
-                print("PAssing turn?")
                 self.passTurn()
             self.word = word
             dir = details[1]
@@ -1004,6 +1019,14 @@ class Game:
         return maxWord, possibleWords[maxWord]
 
     def stringContainsString(self,s1, s2):
+        """
+        Checks if the first letter is part of the letters that can be beginnings of a word
+        Then checks for every letter to be part of the player's hand
+        :param s1: The word from dictionary to be checked
+        :param s2: The string containing the hand of the player
+        :return: True if the word has the beginning of a letter and is made from the letters from the hand
+        False otherwise
+        """
         s1 = s1.upper()
         s2 = list(s2.upper())
         letters = s2[:7]
