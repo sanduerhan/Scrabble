@@ -3,6 +3,7 @@ import tkinter as tk
 from tkinter import messagebox
 from tkinter import *
 import sys
+import numpy as np
 
 x1 = -1
 y1 = -1
@@ -710,26 +711,36 @@ class Game:
                         x_y = [dir, j + 1, i + 1]
                         j2 = j
                         while not found:
-                            if self.board[i][j2 + 1] is not None:
-                                self.word += self.board[i][j2 + 1]
+                            if j2 <15:
+                                if self.board[i][j2 + 1] is not None:
+                                    self.word += self.board[i][j2 + 1]
+                                else:
+                                    found = True
+                                    x_y.append(j2 + 1)
+                                    x_y.append(i + 1)
+                                j2 += 1
                             else:
                                 found = True
                                 x_y.append(j2 + 1)
                                 x_y.append(i + 1)
-                            j2 += 1
                         self.words[self.word] = x_y
                     elif dir == 3 or dir == 8:
                         self.word = self.board[i][j]
                         x_y = [dir, j + 1, i + 1]
                         i2 = i
                         while not found:
-                            if self.board[i2 + 1][j] is not None:
-                                self.word += self.board[i2 + 1][j]
+                            if i2<15:
+                                if self.board[i2 + 1][j] is not None:
+                                    self.word += self.board[i2 + 1][j]
+                                else:
+                                    found = True
+                                    x_y.append(j + 1)
+                                    x_y.append(i2 + 1)
+                                i2 += 1
                             else:
                                 found = True
                                 x_y.append(j + 1)
                                 x_y.append(i2 + 1)
-                            i2 += 1
                         self.words[self.word] = x_y
                         dir -= 3
                         if dir == 5:
@@ -918,18 +929,11 @@ class Game:
         for i in range(14):
             for j in range(14):
                 if self.board[i][j] is not None:
-                    if self.board[i][j+1] is not None and self.board[i + 1][j] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None and self.board[i][j-1] is None:
-                        print("first")
-                        places[self.board[i][j]] = (3,j+1,i+1)
-                    elif self.board[i+1][j] is not None and self.board[i][j+1] is None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
-                        print("second")
+                    if self.board[i][j+1] is None and self.board[i+1][j-1] is None and self.board[i+1][j+1] is None and self.board[i][j-1] is None and self.board[i-1][j+1] is None:
                         places[self.board[i][j]] = (2,j+1,i+1)
-                    elif self.board[i+1][j] is None and self.board[i][j+1] is None and self.board[i][j-1] is not None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
-                        print("third")
+                    elif self.board[i+1][j] is None and self.board[i+2][j] is None and self.board[i-1][j] is None and self.board[i+1][j+1] is None and self.board[i+1][j-1] is None:
                         places[self.board[i][j]] = (3,j+1,i+1)
-                    elif self.board[i+1][j] is None and self.board[i][j+1] is None and self.board[i-1][j] is not None and self.board[i-1][j-1] is None and self.board[i+1][j-1] is None and self.board[i-1][j+1] is None and self.board[i+1][j+1] is None:
-                        print("fourth")
-                        places[self.board[i][j]] = (2,j+1,i+1)
+
         return places
 
 
@@ -970,23 +974,23 @@ class Game:
         print(letters)
         score = 0
         maxScore = 0
+        # for word in self.validWords:
+        #     arr = [x for x in word]
+        #     if set(arr).issubset(set(hand)) and word[0] in letters and len(word) < 7 and word not in self.oldWords and letters[word[0]][1]+len(word)<16 and letters[word[0]][2]+len(word)<16:
+        #         for letter in arr:
+        #             score += LETTER_VALUES[letter]
+        #         possibleWords[word] = [score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2]]
+        #     score = 0
+        letterString = ''
+        for letter in hand:
+            letterString+=letter
         for word in self.validWords:
-            arr = [x for x in word]
-            #print("wtf?")
-            if set(arr).issubset(set(hand)) and word[0] in letters and len(word) < 7 and word not in self.oldWords and letters[word[0]][1]+len(word)<16 and letters[word[0]][2]+len(word)<16:
-                for letter in arr:
-                    #print("here?")
+            if self.stringContainsString(word,letterString) and word[0] in letters and word not in self.oldWords:
+                for letter in word:
                     score += LETTER_VALUES[letter]
-                possibleWords[word] = [score, letters[word[0]][0],letters[word[0]][1],letters[word[0]][2]]
+                    possibleWords[word] = [score, letters[word[0]][0], letters[word[0]][1], letters[word[0]][2]]
             score = 0
         print(possibleWords)
-        empty = ''
-        empty2 = [0,0,0,0]
-        # if not possibleWords:
-        #     self.passTurn()
-        for word in list(possibleWords):
-            if self.two_same(word) is True:
-                del possibleWords[word]
         if not possibleWords:
             self.passTurn()
         for value in possibleWords.values():
@@ -996,6 +1000,16 @@ class Game:
             if points[0] == maxScore:
                 maxWord = word
         return maxWord, possibleWords[maxWord]
+
+    def stringContainsString(self,s1,s2):
+        s1 = s1.upper()
+        s2 = list(s2.upper())
+        for letter in s1:
+            if letter in s2:
+                s2.remove(letter)
+            else:
+                return False
+        return True
 
     def two_same(self,string):
         """
