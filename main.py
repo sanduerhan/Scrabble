@@ -362,11 +362,13 @@ class Game:
             for letter in self.word:
                 if dir == 3:
                     self.placeLetterPC(details[3], details[2], letter)
+                    self.letterThisTurn.append(letter)
                     details[3] += 1
                     coord[3]=details[2]
                     coord[4]=details[3]-1
                 if dir == 2:
                     self.placeLetterPC(details[3], details[2], letter)
+                    self.letterThisTurn.append(letter)
                     details[2] += 1
                     coord[3]=details[2]-1
                     coord[4]=details[3]
@@ -377,10 +379,10 @@ class Game:
             self.showOldWords()
             self.displayScores()
             self.reload()
-            self.letterThisTurn.clear()
             self.hideTilesPC()
             self.displayTilesPC()
             self.changePlayer()
+            self.letterThisTurn.clear()
         window.after(10, self.gamePC)
 
     def displayScores(self):
@@ -619,24 +621,36 @@ class Game:
         :return:
         """
         global endTurn
-        if self.player == 1:
-            self.hideTiles()
-            self.player1hand = self.letters.assign(7)
-            endTurn = True
-            self.changePlayer()
-            self.displayTiles()
-            self.playOrder()
-            self.displayTilesLeft()
-            self.showOldWords()
-        elif self.player == 2:
-            self.hideTiles()
-            self.player2hand = self.letters.assign(7)
-            endTurn = True
-            self.changePlayer()
-            self.displayTiles()
-            self.playOrder()
-            self.displayTilesLeft()
-            self.showOldWords()
+        if self.pc == 0:
+            if self.player == 1:
+                self.hideTiles()
+                self.player1hand = self.letters.assign(7)
+                endTurn = True
+                self.changePlayer()
+                self.displayTiles()
+                self.playOrder()
+                self.displayTilesLeft()
+                self.showOldWords()
+            elif self.player == 2:
+                self.hideTiles()
+                self.player2hand = self.letters.assign(7)
+                endTurn = True
+                self.changePlayer()
+                self.displayTiles()
+                self.playOrder()
+                self.displayTilesLeft()
+                self.showOldWords()
+        else:
+            if self.player == 1:
+                self.hideTilesPC()
+                self.player1hand = self.letters.assign(7)
+                endTurn = True
+                self.displayTilesPC()
+                self.changePlayer()
+                self.displayTilesLeft()
+                self.showOldWords()
+                self.displayScores()
+                self.firstTurn = 0
 
     def reload(self):
         """
@@ -985,7 +999,6 @@ class Game:
         letters = self.getLetterFromBoard()
         possibleWords = {}
         hand = self.player2hand
-        print(hand)
         print(letters)
         score = 0
         maxScore = 0
