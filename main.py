@@ -704,13 +704,13 @@ class Game:
             if word not in self.validWords:
                 messagebox.showerror("Error", word + " not in dictionary")
                 return False
-        lastRound = {}
+        previous = {}
         for word in self.oldWords.keys():
             if word in self.words.keys():
                 if self.oldWords[word] == self.words[word]:
-                    lastRound[word] = self.words[word]
-        for word in lastRound:
-            if lastRound[word] == self.words[word]:
+                    previous[word] = self.words[word]
+        for word in previous:
+            if previous[word] == self.words[word]:
                 self.words.pop(word)
         for word in self.words:
             for x_y in self.words[word]:
